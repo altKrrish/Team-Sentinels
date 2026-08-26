@@ -5,8 +5,8 @@ This document provides a simple summary of how we solved **SIH Problem Statement
 ---
 
 ### Step 1: Ingesting Real-World Data (No Synthetic Shortcuts)
-* We acquired and parsed **$105,965$ authentic real-world severe industrial incident reports** (OSHA Severe Injury Reports).
-* We compiled **14 high-detail verified Indian Oil & Gas incident inquiry cases** from the **Oil Industry Safety Directorate (OISD)**, **DGMS**, and **Oil India Limited** (covering Duliajan, Moran, Digboi, Kumchai, Baghjan, Rajasthan, and Kakinada).
+* Acquired and parsed **$105,965$ authentic real-world severe industrial incident reports** (OSHA Severe Injury Reports).
+* Compiled **14 high-detail verified Indian Oil & Gas incident inquiry cases** from the **Oil Industry Safety Directorate (OISD)**, **DGMS**, and **Oil India Limited** (covering Duliajan, Moran, Digboi, Kumchai, Baghjan, Rajasthan, and Kakinada).
 * Combined with OIL domain operational reports to create a **Master Dataset of $115,979$ total records**.
 
 ---
