@@ -1,0 +1,148 @@
+{
+  "pipeline_name": "Real-World OSHA → SIF Precursor Dataset",
+  "pipeline_version": "1.0.0",
+  "run_at": "2026-08-26T19:19:36.321790",
+  "data_source": "OSHA Severe Injury Reports (Jan 2015 – Nov 2025)",
+  "data_url": "https://www.osha.gov/severeinjury",
+  "input_file": "/Users/krrish/Desktop/Sih26/data/raw/osha_data/January2015toNovember2025.csv",
+  "industry_filter": "all",
+  "total_raw_records": 105996,
+  "after_industry_filter": 105996,
+  "after_cleaning": 105988,
+  "skipped_records": 8,
+  "splits": {
+    "train": {
+      "total": 74190,
+      "sif": 19625,
+      "non_sif": 54565
+    },
+    "val": {
+      "total": 15899,
+      "sif": 4206,
+      "non_sif": 11693
+    },
+    "test": {
+      "total": 15899,
+      "sif": 4206,
+      "non_sif": 11693
+    }
+  },
+  "sif_distribution": {
+    "sif_potential": 28037,
+    "non_sif_potential": 77951,
+    "sif_ratio": 0.2645
+  },
+  "life_saving_rules_distribution": {
+    "Line of Fire": 57762,
+    "Driving": 42376,
+    "Confined Space": 29688,
+    "Working at Height": 21748,
+    "Safe Mechanical Lifting": 12713,
+    "Hot Work": 8688,
+    "Energy Isolation": 5675,
+    "Work Authorization": 685,
+    "Bypassing Safety Controls": 268
+  },
+  "labeling_methodology": {
+    "sif_potential": "Heuristic labeling using: (1) Injury outcome severity (amputation, hospitalization, loss of eye), (2) High-severity narrative keywords (fatal, explosion, electrocuted, crushed, etc.), (3) Medium-severity indicators (fracture, burn, fall height), (4) Event type classification, (5) Fall height extraction. Threshold: score >= 0.40 → SIF-Potential.",
+    "life_saving_rules": "Keyword-based matching against IOGP 9 Life-Saving Rules. Each rule has a curated keyword list covering domain terminology, equipment, activities, and hazard types."
+  },
+  "what_to_predict": {
+    "task_1_sif_classification": {
+      "column": "sif_potential_binary",
+      "type": "Binary Classification",
+      "description": "Predict whether a safety report has SIF (Serious Injury & Fatality) potential",
+      "input": "text_tokenized or text_cleaned",
+      "labels": {
+        "0": "Non-SIF-Potential",
+        "1": "SIF-Potential"
+      }
+    },
+    "task_2_life_saving_rule_tagging": {
+      "columns": [
+        "rule_bypassing_safety_controls",
+        "rule_confined_space",
+        "rule_driving",
+        "rule_energy_isolation",
+        "rule_hot_work",
+        "rule_line_of_fire",
+        "rule_safe_mechanical_lifting",
+        "rule_work_authorization",
+        "rule_working_at_height"
+      ],
+      "type": "Multi-Label Classification",
+      "description": "Tag each report to one or more IOGP Life-Saving Rules",
+      "input": "text_tokenized or text_cleaned",
+      "labels": [
+        "Bypassing Safety Controls",
+        "Confined Space",
+        "Driving",
+        "Energy Isolation",
+        "Hot Work",
+        "Line of Fire",
+        "Safe Mechanical Lifting",
+        "Work Authorization",
+        "Working at Height"
+      ]
+    },
+    "task_3_severity_scoring": {
+      "column": "sif_confidence_score",
+      "type": "Regression (0-1)",
+      "description": "Predict the SIF severity/confidence score",
+      "input": "text_tokenized + engineered features"
+    }
+  },
+  "feature_columns": {
+    "text_features": [
+      "text_cleaned",
+      "text_tokenized",
+      "text_tokenized_no_stopwords"
+    ],
+    "target_variables": [
+      "sif_potential_binary",
+      "sif_confidence_score",
+      "rule_bypassing_safety_controls",
+      "rule_confined_space",
+      "rule_driving",
+      "rule_energy_isolation",
+      "rule_hot_work",
+      "rule_line_of_fire",
+      "rule_safe_mechanical_lifting",
+      "rule_work_authorization",
+      "rule_working_at_height"
+    ],
+    "engineered_numeric": [
+      "word_count",
+      "sentence_count",
+      "negation_count",
+      "high_severity_word_count",
+      "medium_severity_word_count",
+      "low_severity_word_count",
+      "barrier_failure_count",
+      "fall_height_feet",
+      "number_count"
+    ],
+    "categorical": [
+      "naics_sector",
+      "industry_name",
+      "state",
+      "event_type",
+      "nature_of_injury",
+      "part_of_body"
+    ],
+    "temporal": [
+      "year",
+      "month",
+      "quarter",
+      "month_sin",
+      "month_cos",
+      "is_monsoon"
+    ],
+    "geospatial": [
+      "latitude",
+      "longitude",
+      "state",
+      "city"
+    ]
+  }
+}

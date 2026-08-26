@@ -1,0 +1,543 @@
+{
+  "timestamp": "2026-08-26T20:08:57.628668",
+  "train_records": 81184,
+  "test_records": 17398,
+  "feature_count": 37013,
+  "optimal_sif_threshold": 0.48000000000000015,
+  "task1_sif_classification": {
+    "accuracy": 0.9825,
+    "precision_sif": 0.9607,
+    "recall_sif": 0.9834,
+    "f1_sif": 0.9719,
+    "f1_macro": 0.9796,
+    "f1_weighted": 0.9825,
+    "roc_auc": 0.9952,
+    "pr_auc": 0.9863,
+    "false_negative_rate": 0.0166,
+    "confusion_matrix": {
+      "true_positive_sif": 5280,
+      "false_positive": 216,
+      "true_negative_non_sif": 11813,
+      "false_negative_missed_sif": 89
+    }
+  },
+  "task2_iogp_multilabel_rules": {
+    "subset_exact_match_accuracy": 0.8087,
+    "hamming_loss": 0.0242,
+    "jaccard_micro": 0.8602,
+    "f1_micro": 0.9249,
+    "f1_macro": 0.8796,
+    "f1_weighted": 0.9275,
+    "per_rule_metrics": {
+      "Bypassing Safety Controls": {
+        "precision": 0.9424,
+        "recall": 0.9493,
+        "f1_score": 0.9458,
+        "roc_auc": 0.9989,
+        "support": 276
+      },
+      "Confined Space": {
+        "precision": 0.9989,
+        "recall": 0.9858,
+        "f1_score": 0.9923,
+        "roc_auc": 0.9992,
+        "support": 4425
+      },
+      "Driving": {
+        "precision": 0.911,
+        "recall": 0.8911,
+        "f1_score": 0.9009,
+        "roc_auc": 0.9764,
+        "support": 6711
+      },
+      "Energy Isolation": {
+        "precision": 0.5428,
+        "recall": 0.9086,
+        "f1_score": 0.6796,
+        "roc_auc": 0.992,
+        "support": 405
+      },
+      "Hot Work": {
+        "precision": 0.9554,
+        "recall": 0.9584,
+        "f1_score": 0.9569,
+        "roc_auc": 0.9972,
+        "support": 1251
+      },
+      "Line of Fire": {
+        "precision": 0.9096,
+        "recall": 0.9486,
+        "f1_score": 0.9287,
+        "roc_auc": 0.9785,
+        "support": 8022
+      },
+      "Safe Mechanical Lifting": {
+        "precision": 0.9077,
+        "recall": 0.9562,
+        "f1_score": 0.9313,
+        "roc_auc": 0.9965,
+        "support": 1028
+      },
+      "Work Authorization": {
+        "precision": 0.499,
+        "recall": 0.9187,
+        "f1_score": 0.6468,
+        "roc_auc": 0.9961,
+        "support": 283
+      },
+      "Working at Height": {
+        "precision": 0.9378,
+        "recall": 0.9303,
+        "f1_score": 0.934,
+        "roc_auc": 0.9934,
+        "support": 2481
+      }
+    }
+  },
+  "task3_severity_regression": {
+    "mae": 0.044,
+    "rmse": 0.063,
+    "r2_score": 0.9334,
+    "spearman_rank_correlation": 0.9436
+  },
+  "task4_indian_benchmark_results": [
+    {
+      "source_reference": "OISD/SA/2026-27/E&P/02",
+      "incident_title": "",
+      "location": "Duliajan, Assam",
+      "activity": "Drilling Operations",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.9919,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Line of Fire",
+        "Safe Mechanical Lifting",
+        "Bypassing Safety Controls"
+      ],
+      "predicted_rules": [
+        "Confined Space",
+        "Driving",
+        "Hot Work",
+        "Line of Fire",
+        "Safe Mechanical Lifting",
+        "Working at Height"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2025-26/E&P/04",
+      "incident_title": "",
+      "location": "Moran, Assam",
+      "activity": "Casing Running",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.7533,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Line of Fire",
+        "Safe Mechanical Lifting",
+        "Bypassing Safety Controls"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Driving",
+        "Line of Fire"
+      ]
+    },
+    {
+      "source_reference": "MoPNG/Inquiry/Baghjan-05",
+      "incident_title": "",
+      "location": "Duliajan, Assam",
+      "activity": "Workover Operations",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.9999,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Energy Isolation",
+        "Work Authorization",
+        "Bypassing Safety Controls",
+        "Line of Fire"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Driving",
+        "Energy Isolation",
+        "Hot Work",
+        "Line of Fire",
+        "Work Authorization"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2024-25/E&P/03",
+      "incident_title": "",
+      "location": "Kumchai, Arunachal Pradesh",
+      "activity": "Mechanical Maintenance",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.9999,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Energy Isolation",
+        "Line of Fire"
+      ],
+      "predicted_rules": [
+        "Energy Isolation",
+        "Line of Fire"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2023-24/PL/01",
+      "incident_title": "",
+      "location": "Jorhat, Assam",
+      "activity": "Hot Tapping",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.9141,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Hot Work",
+        "Confined Space",
+        "Work Authorization"
+      ],
+      "predicted_rules": [
+        "Confined Space",
+        "Energy Isolation",
+        "Hot Work",
+        "Work Authorization"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2024-25/PL/05",
+      "incident_title": "",
+      "location": "Moran, Assam",
+      "activity": "Pigging Operations",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 1.0,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Energy Isolation",
+        "Line of Fire",
+        "Bypassing Safety Controls"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Energy Isolation",
+        "Hot Work",
+        "Line of Fire"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2025-26/EP/07",
+      "incident_title": "",
+      "location": "Duliajan, Assam",
+      "activity": "Tank Cleaning",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.9913,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Confined Space",
+        "Energy Isolation",
+        "Work Authorization"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Confined Space",
+        "Energy Isolation",
+        "Work Authorization"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2024-25/REF/02",
+      "incident_title": "",
+      "location": "Digboi, Assam",
+      "activity": "Turnaround / Shutdown",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.8885,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Working at Height",
+        "Bypassing Safety Controls"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Safe Mechanical Lifting",
+        "Work Authorization",
+        "Working at Height"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2026-27/P&E/03",
+      "incident_title": "",
+      "location": "Tengakhat, Assam",
+      "activity": "Electrical Maintenance",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 1.0,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Energy Isolation",
+        "Work Authorization",
+        "Bypassing Safety Controls"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Energy Isolation",
+        "Hot Work",
+        "Work Authorization"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2024-25/E&P/06",
+      "incident_title": "",
+      "location": "Rajasthan Block, Rajasthan",
+      "activity": "Heavy Lift",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.6745,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Safe Mechanical Lifting",
+        "Line of Fire"
+      ],
+      "predicted_rules": [
+        "Line of Fire",
+        "Safe Mechanical Lifting"
+      ]
+    },
+    {
+      "source_reference": "OISD/SA/2025-26/OFF/01",
+      "incident_title": "",
+      "location": "Kakinada, Andhra Pradesh",
+      "activity": "Production Operations",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 1.0,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Bypassing Safety Controls",
+        "Energy Isolation"
+      ],
+      "predicted_rules": [
+        "Bypassing Safety Controls",
+        "Confined Space",
+        "Driving",
+        "Energy Isolation",
+        "Hot Work",
+        "Line of Fire",
+        "Work Authorization"
+      ]
+    },
+    {
+      "source_reference": "OIL/HSSE/UA-UC/2026/089",
+      "incident_title": "",
+      "location": "Duliajan, Assam",
+      "activity": "Mud Circulation",
+      "ground_truth_sif": "Non-SIF",
+      "predicted_sif": "Non-SIF",
+      "sif_probability": 0.0307,
+      "sif_match": true,
+      "ground_truth_rules": [],
+      "predicted_rules": [
+        "Hot Work"
+      ]
+    },
+    {
+      "source_reference": "OIL/HSSE/UA-UC/2026/142",
+      "incident_title": "",
+      "location": "Moran, Assam",
+      "activity": "Mechanical Maintenance",
+      "ground_truth_sif": "Non-SIF",
+      "predicted_sif": "Non-SIF",
+      "sif_probability": 0.0079,
+      "sif_match": true,
+      "ground_truth_rules": [],
+      "predicted_rules": []
+    },
+    {
+      "source_reference": "OIL/HSSE/UA-UC/2025/311",
+      "incident_title": "",
+      "location": "Digboi, Assam",
+      "activity": "Logistics & Transport",
+      "ground_truth_sif": "SIF-Potential",
+      "predicted_sif": "SIF-Potential",
+      "sif_probability": 0.5594,
+      "sif_match": true,
+      "ground_truth_rules": [
+        "Driving"
+      ],
+      "predicted_rules": [
+        "Driving"
+      ]
+    }
+  ],
+  "task5_top_linguistic_triggers": {
+    "top_sif_precursor_triggers": [
+      [
+        "amputated",
+        12.7579
+      ],
+      [
+        "amputating",
+        9.406
+      ],
+      [
+        "severing",
+        5.5552
+      ],
+      [
+        "collapse",
+        4.5188
+      ],
+      [
+        "cut off",
+        4.093
+      ],
+      [
+        "finger",
+        3.8557
+      ],
+      [
+        "loss",
+        3.5483
+      ],
+      [
+        "tip",
+        3.548
+      ],
+      [
+        "loss eye",
+        3.5015
+      ],
+      [
+        "finger got",
+        3.4901
+      ],
+      [
+        "fingertip",
+        3.4527
+      ],
+      [
+        "off tip",
+        2.9068
+      ],
+      [
+        "arc flash",
+        2.7018
+      ],
+      [
+        "employee crushed",
+        2.6193
+      ],
+      [
+        "amputate",
+        2.6131
+      ],
+      [
+        "crushed fractured",
+        2.4861
+      ],
+      [
+        "foot amputated",
+        2.4002
+      ],
+      [
+        "leg amputated",
+        2.3392
+      ],
+      [
+        "right middle",
+        2.2948
+      ],
+      [
+        "flesh",
+        2.2881
+      ]
+    ],
+    "top_non_sif_indicators": [
+      [
+        "collapsed",
+        -6.5592
+      ],
+      [
+        "finger crushed",
+        -3.132
+      ],
+      [
+        "lacerated",
+        -2.765
+      ],
+      [
+        "amputation",
+        -2.4654
+      ],
+      [
+        "fracturing",
+        -2.4337
+      ],
+      [
+        "thumb index",
+        -2.3622
+      ],
+      [
+        "heat",
+        -1.9981
+      ],
+      [
+        "hospitalization",
+        -1.8554
+      ],
+      [
+        "pain",
+        -1.8537
+      ],
+      [
+        "feet",
+        -1.8522
+      ],
+      [
+        "partial amputation",
+        -1.8145
+      ],
+      [
+        "crushed between",
+        -1.8033
+      ],
+      [
+        "crushed left",
+        -1.7877
+      ],
+      [
+        "electrocuted",
+        -1.7526
+      ],
+      [
+        "crushed",
+        -1.7384
+      ],
+      [
+        "lost balance",
+        -1.732
+      ],
+      [
+        "media",
+        -1.6328
+      ],
+      [
+        "breaking",
+        -1.6285
+      ],
+      [
+        "injected",
+        -1.5726
+      ],
+      [
+        "finger hospitalized",
+        -1.56
+      ]
+    ]
+  }
+}

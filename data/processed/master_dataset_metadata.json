@@ -1,0 +1,71 @@
+{
+  "dataset_name": "Master HSSE SIF & IOGP Life-Saving Rules Dataset",
+  "version": "3.0.0_master",
+  "generated_at": "2026-08-26T19:55:09.890646",
+  "total_records": 115979,
+  "source_breakdown": {
+    "OSHA_RealWorld": 105965,
+    "OISD_India_RealWorld": 14,
+    "OIL_India_Domain": 10000
+  },
+  "sif_distribution": {
+    "sif_potential_count": 35788,
+    "non_sif_count": 80191,
+    "sif_precursor_percentage": 30.86
+  },
+  "iogp_rules_distribution": {
+    "Line of Fire": 53140,
+    "Driving": 44766,
+    "Confined Space": 29807,
+    "Working at Height": 16872,
+    "Hot Work": 8749,
+    "Safe Mechanical Lifting": 7028,
+    "Energy Isolation": 2919,
+    "Work Authorization": 2078,
+    "Bypassing Safety Controls": 1752
+  },
+  "splits": {
+    "train": {
+      "total": 81184,
+      "sif": 25051
+    },
+    "val": {
+      "total": 17397,
+      "sif": 5368
+    },
+    "test": {
+      "total": 17398,
+      "sif": 5369
+    }
+  },
+  "feature_count": 55,
+  "columns_dictionary": {
+    "report_id": "Unique standardized report identifier",
+    "data_source": "Dataset origin: OSHA_RealWorld, OISD_India_RealWorld, or OIL_India_Domain",
+    "split": "Data split: train, val, or test",
+    "text_cleaned": "Preprocessed narrative text ready for transformer tokenization",
+    "text_tokenized_no_stopwords": "Clean tokens with preserved domain negations for classical ML/TF-IDF",
+    "sif_potential_binary": "Primary Target: 1=SIF Precursor / High Severity, 0=Non-SIF",
+    "sif_confidence_score": "Regression Target: Continuous severity index (0.0 to 1.0)",
+    "rule_*": "Multi-Label Targets: Binary flags for 9 IOGP Life-Saving Rules",
+    "barrier_status": "Status of critical safety barrier: Intact, Degraded, Failed, Absent, Bypassed",
+    "engineered_features": [
+      "word_count",
+      "char_count",
+      "sentence_count",
+      "avg_sentence_length",
+      "negation_count",
+      "high_severity_word_count",
+      "medium_severity_word_count",
+      "low_severity_word_count",
+      "severity_token_ratio",
+      "barrier_failure_word_count",
+      "violation_word_count",
+      "has_measurements",
+      "number_count",
+      "is_monsoon",
+      "is_night_shift",
+      "is_weekend"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Big Data Files & Raw Data Dumps (>10MB)
+data/raw/osha_data/
+data/raw/*.zip
+data/raw/osha_severe_injury.csv
+data/output/*.csv
+data/output/*.jsonl
+data/processed/*.csv
+data/processed/*.jsonl
+!data/processed/indian_oil_gas_benchmark.csv
+!data/processed/indian_oil_gas_benchmark.jsonl
+!data/raw/indian_oisd_oil_incidents.csv
+
+# Scratch and OS metadata
+.DS_Store
+.env
+.venv
+env/
+venv/
+*.log
+nice.py

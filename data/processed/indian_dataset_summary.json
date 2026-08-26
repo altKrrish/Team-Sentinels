@@ -1,0 +1,36 @@
+{
+  "dataset_name": "Indian Oil & Gas + OISD Safety Alerts Benchmark",
+  "generated_at": "2026-08-26T19:51:07.245214",
+  "total_indian_cases": 14,
+  "total_master_records": 106002,
+  "indian_sources": [
+    "Oil Industry Safety Directorate (OISD) Safety Alerts",
+    "Directorate General of Mines Safety (DGMS) Accident Circulars",
+    "Oil India Limited (OIL) Field Case Inquiries (Baghjan, Duliajan, Moran)"
+  ],
+  "sif_distribution_indian": {
+    "sif_potential": 12,
+    "non_sif_potential": 2
+  },
+  "iogp_rules_covered": [
+    "Bypassing Safety Controls",
+    "Confined Space",
+    "Driving",
+    "Energy Isolation",
+    "Hot Work",
+    "Line of Fire",
+    "Safe Mechanical Lifting",
+    "Work Authorization",
+    "Working at Height"
+  ],
+  "indian_locations_represented": [
+    "Duliajan",
+    "Jorhat",
+    "Tengakhat",
+    "Digboi",
+    "Rajasthan Block",
+    "Kakinada",
+    "Kumchai",
+    "Moran"
+  ]
+}
