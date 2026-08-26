@@ -1,4 +1,4 @@
-# 📝 Simple Step-by-Step Walkthrough of What Was Done
+# 📝 Step-by-Step Walkthrough of What Was Done
 
 This document provides a simple summary of how we solved **SIH Problem Statement 26165 for Oil India Limited (OIL)**.
 
@@ -20,7 +20,7 @@ This document provides a simple summary of how we solved **SIH Problem Statement
 ---
 
 ### Step 3: Training the Multi-Task AI Engine
-We trained 3 AI models on $81,184$ training records:
+Trained 3 AI models on $81,184$ training records:
 1. **Task 1 — SIF Precursor Binary Classifier:** Learns to distinguish high-energy fatal hazards from minor observations.
 2. **Task 2 — 9 IOGP Life-Saving Rules Multi-Label Classifier:** Automatically tags relevant rules (*Line of Fire, Working at Height, Energy Isolation, Confined Space, Hot Work, Safe Mechanical Lifting, Driving, Work Authorization, Bypassing Controls*).
 3. **Task 3 — Continuous Severity Regressor:** Predicts a continuous risk score ($0.0\text{--}1.0$) for risk heatmaps.
