@@ -1,4 +1,4 @@
-# 🏛️ GOVERNANCE: Model Card & Limitations
+# Model Card & Limitations
 ### **AI/NLP SIF Precursor Detection & IOGP Life-Saving Rules Engine**
 *Target Organization: Oil India Limited (OIL) | SIH Problem Statement ID: 26165*
 
