@@ -1,5 +1,5 @@
 {
-  "optimal_sif_threshold": 0.4700000000000002,
+  "optimal_sif_threshold": 0.25,
   "rule_thresholds": {
     "rule_bypassing_safety_controls": 0.5799999999999998,
     "rule_confined_space": 0.33999999999999997,

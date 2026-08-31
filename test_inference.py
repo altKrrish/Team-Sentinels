@@ -44,16 +44,7 @@ RULE_DISPLAY_NAMES = [
 ]
 
 
-def clean_text(text: str) -> str:
-    text = unicodedata.normalize("NFKD", text)
-    text = re.sub(r'[\r\n\t]+', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-
-def tokenize_text(text: str) -> str:
-    tokens = re.findall(r'[a-z0-9_]+(?:-[a-z0-9_]+)*', text.lower())
-    return " ".join(tokens)
+from data.preprocess_pipeline import clean_text, tokenize_for_nlp
 
 
 def predict_report(narrative: str, models_dir: Path):
@@ -69,7 +60,7 @@ def predict_report(narrative: str, models_dir: Path):
     rule_thresholds = threshold_data.get("rule_thresholds", {})
 
     cleaned = clean_text(narrative)
-    tokenized = tokenize_text(cleaned)
+    tokenized = tokenize_for_nlp(cleaned, remove_stopwords=True)
     df_sample = pd.DataFrame([{
         "text_cleaned": cleaned,
         "text_tokenized_no_stopwords": tokenized

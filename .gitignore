@@ -26,3 +26,6 @@ env/
 venv/
 *.log
 nice.py
+
+# Model registry archives
+models/registry/

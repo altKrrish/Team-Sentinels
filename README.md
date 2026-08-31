@@ -201,3 +201,38 @@ python src/models/train_sif_engine.py
 # Test a custom incident or observation:
 python test_inference.py "Roughneck working under suspended casing joint without safety harness on rig floor near Duliajan."
 ```
+
+---
+
+## 🔄 8. Continuous Learning & Process Safety Governance
+
+The engine incorporates a **Human-in-the-Loop (HITL) Continuous Learning & Reinforcement Feedback System** with strict industrial process safety guardrails and regulatory compliance:
+
+```mermaid
+flowchart TD
+    A["New Field Observation"] --> B["Active Champion Model"]
+    B --> C["HSSE Dashboard Triage"]
+    C --> D["HSE Officer Review & Overrides"]
+    D --> E["Feedback Store & RLHF Reward Attribution (+1.5 / -5.0 / -1.0)"]
+    E --> F["Replay Memory (Feedback + Historical Disaster Anchors)"]
+    F --> G["Candidate Challenger Retraining"]
+    G --> H{"Zero-Tolerance Safety Gate\n(100% Fatal Recall Guarantee)"}
+    H -- "FAIL (< 100%)" --> I["❌ Reject Candidate & Alert Safety Committee"]
+    H -- "PASS (100%)" --> J["👥 Shadow Benchmarking (Champion vs. Challenger)"]
+    J --> K["🏆 Certified Promotion to Production"]
+    D -.-> L["📜 DGMS / OISD Regulatory Audit Trail"]
+    H -.-> L
+    K -.-> L
+```
+
+### Safety Guardrails & Governance Features:
+1. **RLHF Reward Signal:** $+1.5$ for true SIF catches, $-5.0$ severe penalty for missed fatal precursors (False Negatives), and $-1.0$ for false alarms.
+2. **Automated Zero-Tolerance Safety Gate:** Candidate model updates **MUST achieve 100.0% Recall on historical Indian OISD & OIL disaster cases** before deployment. Any model failing this gate is rejected and blocked.
+3. **Shadow Benchmarking Mode:** Evaluates Champion and Challenger models in parallel, comparing latency, agreement rate, and false positive reduction.
+4. **DGMS & OISD Regulatory Audit Trail:** Immutable JSONL log (`data/feedback/regulatory_audit_log.jsonl`) tracking every reviewer action, model training iteration, and SHA-256 weight checksum under **DGMS** and **OISD-GDN-145 / OISD-STD-189** guidelines.
+
+### Running the Continuous Learning & Governance Suite:
+```bash
+python test_continuous_learning.py
+```
+
