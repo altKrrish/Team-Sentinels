@@ -90,17 +90,32 @@ NUMERIC_FEATURES = [
 
 
 def load_datasets(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load train, validation, test splits, and Indian benchmark."""
+    """Load train, validation, test splits, and Indian benchmark (supports .csv and .csv.gz)."""
     print("📂 Loading preprocessed datasets...")
-    train_path = processed_dir / "master_hsse_sif_train.csv"
-    val_path = processed_dir / "master_hsse_sif_val.csv"
-    test_path = processed_dir / "master_hsse_sif_test.csv"
+    
+    def resolve_path(base_name: str) -> Path:
+        p_csv = processed_dir / f"{base_name}.csv"
+        p_gz = processed_dir / f"{base_name}.csv.gz"
+        if p_csv.exists():
+            return p_csv
+        elif p_gz.exists():
+            return p_gz
+        else:
+            raise FileNotFoundError(f"Neither {p_csv} nor {p_gz} found.")
+
+    train_path = resolve_path("master_hsse_sif_train")
+    val_path = resolve_path("master_hsse_sif_val")
+    test_path = resolve_path("master_hsse_sif_test")
+    
     ind_path = processed_dir / "indian_oil_gas_benchmark.csv"
+    if not ind_path.exists():
+        ind_path_gz = processed_dir / "indian_oil_gas_benchmark.csv.gz"
+        ind_path = ind_path_gz if ind_path_gz.exists() else None
 
     train_df = pd.read_csv(train_path, low_memory=False)
     val_df = pd.read_csv(val_path, low_memory=False)
     test_df = pd.read_csv(test_path, low_memory=False)
-    ind_df = pd.read_csv(ind_path, low_memory=False) if ind_path.exists() else None
+    ind_df = pd.read_csv(ind_path, low_memory=False) if (ind_path and ind_path.exists()) else None
 
     print(f"   Train Records : {len(train_df):,}")
     print(f"   Val Records   : {len(val_df):,}")

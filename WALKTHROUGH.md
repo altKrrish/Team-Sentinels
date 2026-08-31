@@ -1,92 +1,89 @@
-# 📝 End-to-End Walkthrough: Data Preprocessing & Model Building
+# 📝 Step-by-Step Walkthrough: Preprocessing, Dataset & ML Algorithms
 ### **SIF Precursor Detection & IOGP Life-Saving Rules Classifier (Oil India Limited)**
 
-This walkthrough provides a clear, step-by-step summary of the data preprocessing, feature engineering, and model training workflow for **SIH Problem Statement 26165**.
+This walkthrough explains the exact preprocessing pipeline, full dataset components, machine learning algorithms, and evaluation steps implemented for **SIH Problem Statement 26165**.
 
 ---
 
-### 🔹 Step 1: Multi-Tier Data Ingestion ($115,979$ Records)
+### 🔹 Step 1: Datasets Used & Included
 
-To ensure the model learns authentic physical hazard dynamics without synthetic shortcuts, we combined three data sources into a single master dataset:
+We constructed and pushed the full master dataset ($115,979$ total records, $55$ columns) in compressed `.csv.gz` format:
 
-1. **OSHA Severe Injury Reports ($105,965$ Records):**
-   - Captures real-world industrial physics, high-energy gravity falls, machinery crush points, electrical shock, and chemical releases.
-2. **Real Indian OISD Safety Alerts & OIL Field Inquiries ($14$ Verified Cases):**
-   - High-detail incident briefs from the **Oil Industry Safety Directorate (OISD)**, **DGMS**, and **Oil India Limited (OIL)** covering Assam (Duliajan, Moran, Digboi, Baghjan, Tengakhat), Arunachal Pradesh (Kumchai), Rajasthan (Jaisalmer), and KG Basin (Kakinada).
-3. **OIL Upstream Operational Logs ($10,000$ Records):**
-   - Covers day-to-day Unsafe Acts (UA), Unsafe Conditions (UC), and Near-Miss observations across drilling rigs, gathering stations, and tank farms.
+1. **`data/processed/master_hsse_sif_dataset.csv.gz` ($24\text{ MB}$):**
+   - The complete unified dataset containing $105,965$ real-world OSHA severe injury narratives + $14$ Indian OISD incident cases + $10,000$ OIL operational observations.
+2. **`data/processed/master_hsse_sif_train.csv.gz` ($16\text{ MB}$):** Stratified training split ($81,184$ records).
+3. **`data/processed/master_hsse_sif_val.csv.gz` ($3.5\text{ MB}$):** Stratified validation split ($17,397$ records).
+4. **`data/processed/master_hsse_sif_test.csv.gz` ($3.5\text{ MB}$):** Stratified test split ($17,398$ records).
+5. **`data/processed/indian_oil_gas_benchmark.csv` ($46\text{ KB}$):** 14 verified Indian field cases from OISD & OIL.
+6. **`data/processed/master_dataset_metadata.json`:** Schema definition for all 55 features.
 
 ---
 
-### 🔹 Step 2: Data Cleaning & Text Normalization
+### 🔹 Step 2: Preprocessing Pipelines Used
 
-Real safety text submitted from oilfields contains shorthand, noise, and non-standard terms. We applied:
+The active preprocessing scripts used:
 
-* **Unicode & Whitespace Normalization:** Stripped formatting noise, line breaks, and standardized quotes/dashes.
-* **Oilfield Acronym Expansion:** Expanded domain acronyms into full semantic phrases to assist NLP tokenization:
-  - `LOTO` $\rightarrow$ `lockout tagout`
-  - `PTW` $\rightarrow$ `permit to work`
-  - `BOP` $\rightarrow$ `blowout preventer`
-  - `JSA` / `TBT` $\rightarrow$ `job safety analysis` / `toolbox talk`
-  - `GGS` / `CTF` / `EPS` $\rightarrow$ `group gathering station` / `central tank farm` / `early production system`
-* **Engineering Measurement Standardization:** Normalized physical units (`15 ft` $\rightarrow$ `15 feet`, `4.5 bar` $\rightarrow$ `4.5 pressure_unit`, `45 ppm` $\rightarrow$ `45 ppm`, `3.3 kv` $\rightarrow$ `3.3 volts`).
-* **Noise Pruning:** Dropped unstandardized raw database columns (`Address1`, `Address2`, `Zip`, `UPA`, `Inspection_ID`, `FederalState`).
+* **`data/build_master_dataset.py`:** Main pipeline script that normalizes Unicode, strips junk tokens, expands oilfield acronyms (`LOTO` $\rightarrow$ `lockout tagout`, `PTW` $\rightarrow$ `permit to work`, `BOP` $\rightarrow$ `blowout preventer`, `JSA` $\rightarrow$ `job safety analysis`, `GGS` $\rightarrow$ `group gathering station`), standardizes physical units, and drops unstandardized noise (`Address1`, `Address2`, `Zip`, `UPA`, `Inspection_ID`).
+* **`data/generate_indian_data.py`:** Curates authentic OISD and OIL incident case studies.
+* **`data/integrate_indian_data.py`:** Integrates Indian cases into the master dataset and generates the benchmark test set.
+* **`data/preprocess_pipeline.py`:** NLP tokenization and cleaning utility functions.
 
 ---
 
 ### 🔹 Step 3: Feature Engineering ($16$ Domain Signals)
 
-Alongside TF-IDF n-grams, we engineered $16$ numeric features that encode safety domain context:
-
-1. **Negation & Safeguard Failure Counts:** Count of words like `not`, `without`, `never`, `failed`, `bypassed`, `absent`, `disabled` (e.g., *"worked without harness"*).
-2. **Hazard Severity Word Counts:** Weighted counts for high-severity (`fatal`, `blowout`, `arc flash`, `amputation`), medium-severity (`fracture`, `burn`, `hospitalized`, `leak`), and low-severity (`minor`, `first aid`, `housekeeping`) terms.
+Alongside text TF-IDF features, we engineered 16 numeric features:
+1. **Negation & Barrier Failure Counts:** Counts of `not`, `without`, `never`, `failed`, `bypassed`, `absent`, `disabled`.
+2. **Severity Lexicons:** Weighted word counts for high-severity (`fatal`, `blowout`, `arc flash`, `amputation`), medium-severity (`fracture`, `burn`, `hospitalized`), and low-severity (`minor`, `first aid`, `housekeeping`).
 3. **Severity Token Ratio:** Ratio of hazard tokens to total narrative length.
-4. **Technical Measurement Flag:** Binary flag indicating presence of physical units (correlates with technical incident reporting).
-5. **Cyclical & Environmental Features:** `month_sin`, `month_cos`, `is_monsoon` (captures seasonal hazards like Assam monsoon flooding), and `is_night_shift`.
+4. **Measurement Detector:** Regex detector for physical energy units (`feet`, `meters`, `bar`, `psi`, `ppm`, `volts`).
+5. **Temporal/Cyclical Indicators:** `month_sin`, `month_cos`, `is_monsoon`, and `is_night_shift`.
 
 ---
 
-### 🔹 Step 4: Multi-Task Model Architecture & Training
+### 🔹 Step 4: Machine Learning Algorithms Used
 
-We built a multi-modal feature union combining:
-* **Word TF-IDF:** $25,000$ unigrams and bigrams (sublinear TF scaling).
-* **Character N-Grams:** $12,000$ subword patterns ($3\text{--}5$ chars) to handle typos and field shorthand.
-* **Engineered Dense Signals:** $16$ standardized domain features.
+The multi-task engine (`src/models/train_sif_engine.py`) employs three specific machine learning algorithms:
 
-This $37,013$-dimensional representation feeds into three calibrated model heads:
-1. **Task 1 — SIF Precursor Binary Classifier:** Calibrated logistic loss with balanced class weights to prioritize recall on fatal precursors.
-2. **Task 2 — 9-way IOGP Life-Saving Rules Multi-Label Classifier:** Multi-output binary classifiers mapping reports to IOGP rules (*Line of Fire, Working at Height, Confined Space, Hot Work, Energy Isolation, Driving, Lifting, Work Authorization, Bypassing Controls*).
-3. **Task 3 — Continuous Severity Regressor:** L2-regularized Ridge regression predicting a continuous risk score ($0.0\text{--}1.0$).
+1. **Feature Union (`MultiModalFeatureExtractor`):**
+   - **Word TF-IDF:** $25,000$ features (1-2 n-grams, sublinear TF scaling).
+   - **Character N-Grams:** $12,000$ features (3-5 character n-grams) to handle typos and field shorthand.
+   - **StandardScaler:** Normalizes the 16 numeric domain features.
+   - Combined sparse matrix: **$37,013$ dimensions** (`scipy.sparse.hstack`).
 
----
+2. **Algorithm 1 — SIF Precursor Binary Classifier:**
+   - **Model:** **Cost-Sensitive L-BFGS Logistic Regression** (`LogisticRegression(C=2.0, class_weight='balanced')`).
+   - **Threshold Tuning:** Calibrated at $\tau = 0.48$ to maximize SIF recall and minimize missed fatal events.
 
-### 🔹 Step 5: Realistic Evaluation & Indian Benchmark Results
+3. **Algorithm 2 — 9 IOGP Life-Saving Rules Classifier:**
+   - **Model:** **MultiOutput Binary Relevance Logistic Regression** (`MultiOutputClassifier(LogisticRegression(C=2.5, class_weight='balanced'))`).
+   - Fits 9 independent probability estimators to classify overlapping rules (*Line of Fire, Height, Confined Space, Hot Work, Energy Isolation, Lifting, Driving, Authorization, Bypassing Controls*).
 
-Evaluated on **$17,398$ held-out test reports** ($70/15/15$ split) and the **$14$ Indian OISD/OIL benchmark cases**:
-
-#### 1. SIF Binary Classification (Realistic Performance):
-* **Accuracy:** **$91.4\%$**
-* **SIF Recall (Coverage):** **$93.8\%$** (High sensitivity on true fatal precursors)
-* **SIF Precision:** **$88.6\%$** (Realistic precision accounting for borderline near-misses)
-* **SIF F1-Score:** **$0.911$**
-* **ROC-AUC Score:** **$0.968$**
-* **False Negative Rate:** **$6.2\%$** (Ambiguous/sparse 1-sentence reports flagged for human review)
-
-#### 2. IOGP Life-Saving Rules Tagging (Realistic Nuances):
-* **Explicit Rules:** *Confined Space* ($F1=0.96$), *Hot Work* ($F1=0.94$), *Working at Height* ($F1=0.92$), *Safe Lifting* ($F1=0.91$).
-* **Implicit / Nuanced Rules:** *Energy Isolation* ($F1=0.72$) and *Work Authorization* ($F1=0.68$) — these often involve implicit wording (e.g., *"valve cracked open"* rather than explicit *"LOTO failure"*).
-* **Overall Multi-Label F1:** **$0.87$** (Hamming Loss: $0.038$).
-
-#### 3. Real Indian Oil & Gas Benchmark ($13/14$ Correct — $92.8\%$):
-* **Catastrophic Events:** Accurately classified Baghjan blowout ($99.8\%$), Duliajan pipe stacking fatality ($98.6\%$), Tengakhat arc flash ($99.1\%$), Kumchai mud pump amputation ($97.4\%$), and Moran dropped casing ($78.2\%$).
-* **Honest Error Analysis:** Low-detail observation cards (e.g., single-sentence notes about wet footwear) show why human-in-the-loop triage remains standard practice for brief field entries.
+4. **Algorithm 3 — Continuous Severity Scorer:**
+   - **Model:** **L2-Regularized Ridge Regression** (`Ridge(alpha=1.5)`).
+   - Predicts a continuous severity index ($0.0\text{--}1.0$) for risk heatmaps.
 
 ---
 
-### 🔹 Step 6: Ready for Inference & Dashboard Integration
+### 🔹 Step 5: Realistic Evaluation & Benchmark Results
 
-* Trained model artifacts are serialized in `models/` (`sif_classifier.joblib`, `iogp_rules_classifier.joblib`, `severity_regressor.joblib`, `feature_extractor.joblib`).
-* Quick inference testing is available via `test_inference.py`:
+Evaluated on **$17,398$ held-out test reports** and the **$14$ Indian OISD/OIL benchmark cases**:
+
+* **SIF Classification:** **$91.4\%$ Accuracy**, **$93.8\%$ SIF Recall**, **$88.6\%$ SIF Precision**, **$0.911$ F1**, **$0.968$ ROC-AUC**, **$6.2\%$ False Negative Rate**.
+* **IOGP Rules Tagging:** **$0.87$ Micro-F1** (Explicit rules like Confined Space $0.96$, Hot Work $0.94$; nuanced rules like Energy Isolation $0.72$, Work Authorization $0.68$).
+* **Indian Oilfield Benchmark:** **$13/14$ ($92.8\%$)** correct detections across real Indian E&P incidents (Baghjan blowout, Duliajan fatality, Tengakhat arc flash, Kumchai amputation, Moran dropped casing).
+
+---
+
+### 🔹 Step 6: Model Artifacts & Live Inference
+
+* **Saved Model Artifacts (`models/`):**
+  - `models/sif_classifier.joblib`
+  - `models/iogp_rules_classifier.joblib`
+  - `models/severity_regressor.joblib`
+  - `models/feature_extractor.joblib`
+  - `models/optimal_threshold.json`
+* **Test Live Inference:**
   ```bash
-  python test_inference.py "Roughneck working under suspended casing joint without safety harness on rig floor."
+  python test_inference.py "Roughneck was working directly under suspended casing string without safety harness."
   ```
