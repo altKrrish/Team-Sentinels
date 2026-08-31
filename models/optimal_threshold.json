@@ -1,1 +1,14 @@
-{"optimal_sif_threshold": 0.48000000000000015}
+{
+  "optimal_sif_threshold": 0.4700000000000002,
+  "rule_thresholds": {
+    "rule_bypassing_safety_controls": 0.5799999999999998,
+    "rule_confined_space": 0.33999999999999997,
+    "rule_driving": 0.47999999999999987,
+    "rule_energy_isolation": 0.6799999999999997,
+    "rule_hot_work": 0.6599999999999998,
+    "rule_line_of_fire": 0.3999999999999999,
+    "rule_safe_mechanical_lifting": 0.6799999999999997,
+    "rule_work_authorization": 0.6799999999999997,
+    "rule_working_at_height": 0.6399999999999998
+  }
+}

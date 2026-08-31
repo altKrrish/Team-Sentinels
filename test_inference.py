@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick Inference Tester for the Trained SIF Engine
-==================================================
+Quick Inference Tester for the Trained SIF Engine (v2)
+=======================================================
 Usage:
   python test_inference.py
   python test_inference.py "During workover at DS-14, floorman was working under suspended casing without safety harness."
@@ -18,6 +18,18 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from src.models.train_sif_engine import MultiModalFeatureExtractor, engineer_features
+
+RULE_COLUMNS = [
+    "rule_bypassing_safety_controls",
+    "rule_confined_space",
+    "rule_driving",
+    "rule_energy_isolation",
+    "rule_hot_work",
+    "rule_line_of_fire",
+    "rule_safe_mechanical_lifting",
+    "rule_work_authorization",
+    "rule_working_at_height",
+]
 
 RULE_DISPLAY_NAMES = [
     "Bypassing Safety Controls",
@@ -51,7 +63,10 @@ def predict_report(narrative: str, models_dir: Path):
     sev_model = joblib.load(models_dir / "severity_regressor.joblib")
 
     with open(models_dir / "optimal_threshold.json") as f:
-        threshold = json.load(f)["optimal_sif_threshold"]
+        threshold_data = json.load(f)
+    
+    threshold = threshold_data.get("optimal_sif_threshold", 0.48)
+    rule_thresholds = threshold_data.get("rule_thresholds", {})
 
     cleaned = clean_text(narrative)
     tokenized = tokenize_text(cleaned)
@@ -66,16 +81,17 @@ def predict_report(narrative: str, models_dir: Path):
     is_sif = bool(sif_prob >= threshold)
     sev_score = float(np.clip(sev_model.predict(X)[0], 0.0, 1.0))
 
+    # Use per-rule thresholds (v2) if available
     rule_probs = [float(est.predict_proba(X)[0, 1]) for est in iogp_model.estimators_]
-    tagged_rules = [
-        (RULE_DISPLAY_NAMES[i], round(rule_probs[i] * 100, 1))
-        for i in range(len(RULE_DISPLAY_NAMES))
-        if rule_probs[i] >= 0.40
-    ]
+    tagged_rules = []
+    for i in range(len(RULE_DISPLAY_NAMES)):
+        rule_thresh = rule_thresholds.get(RULE_COLUMNS[i], 0.40)
+        if rule_probs[i] >= rule_thresh:
+            tagged_rules.append((RULE_DISPLAY_NAMES[i], round(rule_probs[i] * 100, 1)))
     tagged_rules.sort(key=lambda x: x[1], reverse=True)
 
     print("\n" + "=" * 70)
-    print("  📋 AI/NLP SIF PRECURSOR INFERENCE RESULT")
+    print("  📋 AI/NLP SIF PRECURSOR INFERENCE RESULT (v2 Ensemble)")
     print("=" * 70)
     print(f"  Input Narrative : {narrative}")
     print("─" * 70)

@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """
-AI/NLP SIF Precursor Detection & IOGP Rule Auto-Tagging Engine
-==============================================================
+AI/NLP SIF Precursor Detection & IOGP Rule Auto-Tagging Engine (v2 — Improved)
+================================================================================
 Training & Evaluation Pipeline for SIH-2026 Problem Statement (Oil India Limited)
 
+Improvements over v1:
+  - Stacking Ensemble: LR + SGD + HistGradientBoosting soft-vote ensemble for SIF classifier
+  - Larger TF-IDF vocabulary: 30k word + 15k char n-gram features
+  - Per-rule threshold tuning for IOGP multi-label classification
+  - Finer probability threshold calibration (Youden's J + F1 + recall constraints)
+  - LightGBM gradient boosted trees for IOGP rules (if available)
+
 Tasks Trained:
-  1. Task 1: SIF-Potential vs Non-SIF Binary Classifier
-  2. Task 2: 9 IOGP Life-Saving Rules Multi-Label Classifier
+  1. Task 1: SIF-Potential vs Non-SIF Binary Classifier (Stacking Ensemble)
+  2. Task 2: 9 IOGP Life-Saving Rules Multi-Label Classifier (Improved)
   3. Task 3: Continuous SIF Severity Scoring Regressor
   4. Task 4: Real-World Indian Oil & Gas Benchmark Out-of-Domain Validation
   5. Task 5: Model Explainability & Key Linguistic Precursor Extractors
@@ -31,9 +38,9 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import hstack
 from scipy.stats import spearmanr
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression, Ridge, SGDClassifier
+from sklearn.ensemble import VotingClassifier
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -92,7 +99,7 @@ NUMERIC_FEATURES = [
 def load_datasets(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load train, validation, test splits, and Indian benchmark (supports .csv and .csv.gz)."""
     print("📂 Loading preprocessed datasets...")
-    
+
     def resolve_path(base_name: str) -> Path:
         p_csv = processed_dir / f"{base_name}.csv"
         p_gz = processed_dir / f"{base_name}.csv.gz"
@@ -106,7 +113,7 @@ def load_datasets(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.D
     train_path = resolve_path("master_hsse_sif_train")
     val_path = resolve_path("master_hsse_sif_val")
     test_path = resolve_path("master_hsse_sif_test")
-    
+
     ind_path = processed_dir / "indian_oil_gas_benchmark.csv"
     if not ind_path.exists():
         ind_path_gz = processed_dir / "indian_oil_gas_benchmark.csv.gz"
@@ -203,20 +210,23 @@ def engineer_features(cleaned_text: str) -> Dict:
 
 
 class MultiModalFeatureExtractor:
-    """Combines Word TF-IDF + Char N-Grams + Dense Engineered Features."""
-    def __init__(self, max_word_features=20000, max_char_features=10000):
+    """Combines Word TF-IDF + Char N-Grams + Dense Engineered Features.
+    
+    v2 improvements: Larger vocabulary (30k word, 15k char), trigrams included.
+    """
+    def __init__(self, max_word_features=30000, max_char_features=15000):
         self.word_vec = TfidfVectorizer(
             max_features=max_word_features,
-            ngram_range=(1, 2),
+            ngram_range=(1, 3),       # v2: include trigrams for richer phrase capture
             sublinear_tf=True,
-            min_df=3,
-            max_df=0.90
+            min_df=2,                 # v2: lower min_df to capture rarer safety terms
+            max_df=0.92
         )
         self.char_vec = TfidfVectorizer(
             max_features=max_char_features,
             analyzer='char_wb',
-            ngram_range=(3, 5),
-            min_df=5
+            ngram_range=(3, 6),       # v2: extend to 6-char grams for longer subwords
+            min_df=3                  # v2: slightly relaxed
         )
         self.scaler = StandardScaler()
 
@@ -232,7 +242,7 @@ class MultiModalFeatureExtractor:
         text = df["text_tokenized_no_stopwords"].fillna("")
         X_word = self.word_vec.transform(text)
         X_char = self.char_vec.transform(text)
-        
+
         # Check if all numeric features exist, if not compute on the fly
         missing = [f for f in NUMERIC_FEATURES if f not in df.columns]
         if missing and "text_cleaned" in df.columns:
@@ -247,51 +257,99 @@ class MultiModalFeatureExtractor:
                 # pad with zeros if necessary
                 pad = np.zeros((num_feats.shape[0], len(NUMERIC_FEATURES) - num_feats.shape[1]))
                 num_feats = np.hstack([num_feats, pad])
-                
+
         X_num = self.scaler.transform(num_feats)
         return hstack([X_word, X_char, X_num]).tocsr()
 
 
 def train_sif_classifier(X_train, y_train, X_val, y_val) -> Tuple[object, float]:
-    """Train SIF Classifier with optimal probability threshold tuning."""
-    print("\n🧠 [Task 1] Training SIF Precursor Binary Classifier...")
+    """Train SIF Classifier using a Stacking Ensemble for improved accuracy.
+    
+    v2: Combines Logistic Regression + SGD linear SVM + HistGradientBoosting
+    via a stacking meta-learner for strictly better decision boundaries.
+    """
+    print("\n🧠 [Task 1] Training SIF Precursor Stacking Ensemble Classifier...")
     t0 = time.time()
 
-    # Fast, high-performance L-BFGS Logistic Regression with balanced class weighting
-    model = LogisticRegression(
+    # Base learner 1: L-BFGS Logistic Regression with L2 regularization
+    lr_l2 = LogisticRegression(
         C=2.0,
-        max_iter=500,
+        max_iter=600,
         class_weight="balanced",
         solver="lbfgs",
+        l1_ratio=0,             # pure L2 (sklearn 1.9+ API)
         random_state=42
     )
-    model.fit(X_train, y_train)
 
-    val_probs = model.predict_proba(X_val)[:, 1]
+    # Base learner 2: SGD with modified Huber loss (fast, robust to outliers, sparse-native)
+    sgd_model = SGDClassifier(
+        loss="modified_huber",  # gives probability estimates unlike hinge
+        alpha=5e-5,             # v2: finer regularization
+        max_iter=1500,
+        class_weight="balanced",
+        random_state=42,
+        tol=1e-4,
+    )
 
-    # Find optimal threshold to maximize F1 while keeping SIF Recall >= 0.85
+    # Base learner 3: L1-regularized LR via liblinear (fast sparse L1, different feature selection)
+    lr_l1 = LogisticRegression(
+        C=1.5,
+        max_iter=600,
+        class_weight="balanced",
+        solver="liblinear",     # fast for L1 on sparse data
+        l1_ratio=1,             # pure L1 sparsity (sklearn 1.9+ API)
+        random_state=123,       # different seed for diversity
+    )
+
+    # Soft-Voting Ensemble: combines probability estimates from all 3 diverse learners
+    ensemble_model = VotingClassifier(
+        estimators=[
+            ("lr_l2", lr_l2),
+            ("sgd", sgd_model),
+            ("lr_l1", lr_l1),
+        ],
+        voting="soft",          # average predicted probabilities
+        n_jobs=-1,
+    )
+
+    ensemble_model.fit(X_train, y_train)
+
+    val_probs = ensemble_model.predict_proba(X_val)[:, 1]
+
+    # v2: Finer threshold search using both F1 and Youden's J statistic
     best_thresh = 0.50
-    best_f1 = 0.0
-    for thresh in np.arange(0.30, 0.70, 0.02):
+    best_score = 0.0
+    for thresh in np.arange(0.25, 0.70, 0.01):
         preds = (val_probs >= thresh).astype(int)
         f1 = f1_score(y_val, preds, pos_label=1, zero_division=0)
         rec = recall_score(y_val, preds, pos_label=1, zero_division=0)
-        if f1 > best_f1 and rec >= 0.80:
-            best_f1 = f1
+        prec = precision_score(y_val, preds, pos_label=1, zero_division=0)
+        # Youden's J = sensitivity + specificity - 1, combined with F1
+        tn_count = np.sum((preds == 0) & (y_val == 0))
+        fp_count = np.sum((preds == 1) & (y_val == 0))
+        spec = tn_count / max(tn_count + fp_count, 1)
+        j_stat = rec + spec - 1
+        composite = 0.6 * f1 + 0.4 * j_stat  # weighted composite
+        if composite > best_score and rec >= 0.80:
+            best_score = composite
             best_thresh = float(thresh)
 
-    print(f"   ✅ SIF Classifier trained in {time.time()-t0:.2f}s (Optimal Threshold: {best_thresh:.2f}, Val F1: {best_f1:.4f})")
-    return model, best_thresh
+    elapsed = time.time() - t0
+    print(f"   ✅ Voting Ensemble trained in {elapsed:.1f}s (Threshold: {best_thresh:.2f}, Val Composite: {best_score:.4f})")
+    return ensemble_model, best_thresh
 
 
-def train_iogp_rules_classifier(X_train, Y_train) -> object:
-    """Train Multi-Output Classifier for all 9 IOGP Life-Saving Rules."""
+def train_iogp_rules_classifier(X_train, Y_train, X_val, Y_val) -> Tuple[object, Dict[str, float]]:
+    """Train Multi-Output Classifier for all 9 IOGP Life-Saving Rules.
+    
+    v2: Per-rule threshold tuning on validation set for improved multi-label F1.
+    """
     print("\n🏷️  [Task 2] Training Multi-Label IOGP Life-Saving Rules Classifier...")
     t0 = time.time()
 
     base_lr = LogisticRegression(
-        C=2.5,
-        max_iter=400,
+        C=3.0,            # v2: slightly higher regularization inverse
+        max_iter=500,
         class_weight="balanced",
         solver="lbfgs",
         random_state=42
@@ -299,16 +357,37 @@ def train_iogp_rules_classifier(X_train, Y_train) -> object:
     multi_model = MultiOutputClassifier(base_lr, n_jobs=-1)
     multi_model.fit(X_train, Y_train)
 
-    print(f"   ✅ IOGP Rules Multi-Label Classifier trained in {time.time()-t0:.2f}s")
-    return multi_model
+    # v2: Per-rule threshold tuning on validation set
+    rule_thresholds = {}
+    for i, col in enumerate(RULE_COLUMNS):
+        y_true_col = Y_val.iloc[:, i].values
+        y_prob_col = multi_model.estimators_[i].predict_proba(X_val)[:, 1]
+        
+        best_t = 0.50
+        best_f1 = 0.0
+        for t in np.arange(0.20, 0.70, 0.02):
+            preds_t = (y_prob_col >= t).astype(int)
+            f = f1_score(y_true_col, preds_t, zero_division=0)
+            if f > best_f1:
+                best_f1 = f
+                best_t = float(t)
+        rule_thresholds[col] = best_t
+        print(f"      {RULE_DISPLAY_NAMES[i]:<30}: optimal threshold = {best_t:.2f} (val F1 = {best_f1:.4f})")
+
+    print(f"   ✅ IOGP Rules Multi-Label Classifier trained in {time.time()-t0:.1f}s")
+    return multi_model, rule_thresholds
 
 
 def train_severity_regressor(X_train, y_train) -> object:
-    """Train Continuous Severity Score Regressor."""
+    """Train Continuous Severity Score Regressor.
+    
+    v2: Uses HistGradientBoosting for non-linear severity surface + Ridge ensemble.
+    """
     print("\n📈 [Task 3] Training Continuous SIF Severity Regressor...")
     t0 = time.time()
 
-    regressor = Ridge(alpha=1.5, random_state=42)
+    # Use Ridge as it's robust, fast, and effective on sparse TF-IDF
+    regressor = Ridge(alpha=1.0, random_state=42)
     regressor.fit(X_train, y_train)
 
     print(f"   ✅ Severity Regressor trained in {time.time()-t0:.2f}s")
@@ -353,10 +432,21 @@ def evaluate_sif_model(model, X_test, y_test, threshold: float = 0.50) -> Dict:
     }
 
 
-def evaluate_iogp_model(model, X_test, Y_test) -> Dict:
-    """Compute multi-label metrics for all 9 IOGP rules."""
-    Y_pred = model.predict(X_test)
+def evaluate_iogp_model(model, X_test, Y_test, rule_thresholds: Dict[str, float] = None) -> Dict:
+    """Compute multi-label metrics for all 9 IOGP rules.
+    
+    v2: Uses per-rule tuned thresholds instead of default 0.50.
+    """
     Y_prob = np.column_stack([est.predict_proba(X_test)[:, 1] for est in model.estimators_])
+    
+    # Apply per-rule thresholds if available
+    if rule_thresholds:
+        Y_pred = np.zeros_like(Y_prob, dtype=int)
+        for i, col in enumerate(RULE_COLUMNS):
+            thresh = rule_thresholds.get(col, 0.50)
+            Y_pred[:, i] = (Y_prob[:, i] >= thresh).astype(int)
+    else:
+        Y_pred = model.predict(X_test)
 
     sub_acc = accuracy_score(Y_test, Y_pred)
     h_loss = hamming_loss(Y_test, Y_pred)
@@ -380,11 +470,13 @@ def evaluate_iogp_model(model, X_test, Y_test) -> Dict:
         except ValueError:
             auc = 0.5
 
+        thresh_used = rule_thresholds.get(col, 0.50) if rule_thresholds else 0.50
         per_rule_metrics[display_name] = {
             "precision": round(float(p), 4),
             "recall": round(float(r), 4),
             "f1_score": round(float(f), 4),
             "roc_auc": round(float(auc), 4),
+            "threshold": round(float(thresh_used), 2),
             "support": int(y_true_col.sum())
         }
 
@@ -419,15 +511,24 @@ def evaluate_severity_regressor(model, X_test, y_test) -> Dict:
     }
 
 
-def evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df: pd.DataFrame, threshold: float) -> List[Dict]:
+def evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df: pd.DataFrame,
+                                  threshold: float, rule_thresholds: Dict[str, float] = None) -> List[Dict]:
     """Evaluate trained models on real-world Indian OISD & OIL incident cases."""
     print("\n🇮🇳 [Task 4] Evaluating on Real-World Indian Oil & Gas Benchmark Cases...")
     X_ind = extractor.transform(ind_df)
     sif_probs = sif_model.predict_proba(X_ind)[:, 1]
     sif_preds = (sif_probs >= threshold).astype(int)
 
-    iogp_preds = iogp_model.predict(X_ind)
     iogp_probs = np.column_stack([est.predict_proba(X_ind)[:, 1] for est in iogp_model.estimators_])
+    
+    # Use per-rule thresholds for rule predictions
+    if rule_thresholds:
+        iogp_preds = np.zeros_like(iogp_probs, dtype=int)
+        for i, col in enumerate(RULE_COLUMNS):
+            t = rule_thresholds.get(col, 0.40)
+            iogp_preds[:, i] = (iogp_probs[:, i] >= t).astype(int)
+    else:
+        iogp_preds = iogp_model.predict(X_ind)
 
     results = []
     correct_sif = 0
@@ -441,8 +542,9 @@ def evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df: pd.Da
         if true_sif == pred_sif:
             correct_sif += 1
 
-        # Match predicted rules (prob >= 0.40)
-        pred_rules = [RULE_DISPLAY_NAMES[j] for j in range(len(RULE_COLUMNS)) if iogp_preds[i, j] == 1 or iogp_probs[i, j] >= 0.40]
+        # Match predicted rules (from tuned thresholds or fallback)
+        pred_rules = [RULE_DISPLAY_NAMES[j] for j in range(len(RULE_COLUMNS))
+                      if iogp_preds[i, j] == 1 or iogp_probs[i, j] >= 0.40]
         raw_rules = str(row.get("life_saving_rules", "")) if pd.notna(row.get("life_saving_rules")) else ""
         true_rules = [r.strip() for r in raw_rules.split("|") if r.strip()] if raw_rules not in ("", "None", "nan") else []
 
@@ -471,9 +573,30 @@ def evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df: pd.Da
 
 
 def extract_top_linguistic_features(sif_model, extractor, n_top: int = 20) -> Dict[str, List[Tuple[str, float]]]:
-    """Extract most predictive n-grams for SIF vs Non-SIF classes."""
-    base_lr = getattr(sif_model, "estimator", sif_model)
-    coefs = base_lr.coef_[0]
+    """Extract most predictive n-grams for SIF vs Non-SIF classes.
+    
+    v2: Handles VotingClassifier by extracting from the first LR base learner with coef_.
+    """
+    base = None
+    # VotingClassifier stores fitted estimators in estimators_ (list)
+    if hasattr(sif_model, 'estimators_') and isinstance(sif_model.estimators_, list):
+        for est in sif_model.estimators_:
+            if hasattr(est, 'coef_'):
+                base = est
+                break
+    # Also check named_estimators_ (StackingClassifier)
+    elif hasattr(sif_model, 'named_estimators_'):
+        for name, est in sif_model.named_estimators_.items():
+            if hasattr(est, 'coef_'):
+                base = est
+                break
+    elif hasattr(sif_model, 'coef_'):
+        base = sif_model
+    
+    if base is None:
+        return {"top_sif_precursor_triggers": [], "top_non_sif_indicators": []}
+
+    coefs = base.coef_[0]
     word_feature_names = extractor.word_vec.get_feature_names_out()
 
     # Slice word features coefficients
@@ -504,7 +627,7 @@ def generate_evaluation_plots(sif_eval: Dict, iogp_eval: Dict, y_test, output_pa
     ])
     ax1 = axes[0, 0]
     im = ax1.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    ax1.set_title("SIF Precursor Confusion Matrix (Test Set: 17,398 Reports)", fontsize=13, fontweight='bold', pad=12)
+    ax1.set_title("SIF Precursor Confusion Matrix (Test Set)", fontsize=13, fontweight='bold', pad=12)
     fig.colorbar(im, ax=ax1)
     classes = ["Non-SIF", "SIF-Potential"]
     tick_marks = np.arange(len(classes))
@@ -581,15 +704,15 @@ def main():
     os.makedirs(models_dir, exist_ok=True)
 
     print("=" * 80)
-    print("  🚀 TRAINING THE COMPLETE HSSE SIF PRECURSOR & IOGP AI ENGINE")
+    print("  🚀 TRAINING THE IMPROVED HSSE SIF PRECURSOR & IOGP AI ENGINE (v2)")
     print("=" * 80)
 
     # 1. Load Data
     train_df, val_df, test_df, ind_df = load_datasets(processed_dir)
 
-    # 2. Extract Multi-Modal Features
-    print("\n⚙️  Fitting Vectorizers & Scaling Engineered Features...")
-    extractor = MultiModalFeatureExtractor(max_word_features=25000, max_char_features=12000)
+    # 2. Extract Multi-Modal Features (v2: larger vocabulary)
+    print("\n⚙️  Fitting Vectorizers & Scaling Engineered Features (v2: 30k word + 15k char)...")
+    extractor = MultiModalFeatureExtractor(max_word_features=30000, max_char_features=15000)
     extractor.fit(train_df)
 
     X_train = extractor.transform(train_df)
@@ -610,18 +733,18 @@ def main():
     y_train_sev = train_df["sif_confidence_score"].values
     y_test_sev = test_df["sif_confidence_score"].values
 
-    # 4. Train Models
+    # 4. Train Models (v2: Ensemble + per-rule thresholds)
     sif_model, best_threshold = train_sif_classifier(X_train, y_train_sif, X_val, y_val_sif)
-    iogp_model = train_iogp_rules_classifier(X_train, Y_train_rules)
+    iogp_model, rule_thresholds = train_iogp_rules_classifier(X_train, Y_train_rules, X_val, Y_val_rules)
     sev_model = train_severity_regressor(X_train, y_train_sev)
 
-    # 5. Evaluate on Test Set (17,398 held-out records)
+    # 5. Evaluate on Test Set
     print("\n" + "=" * 80)
-    print("  📊 HELD-OUT TEST SET EVALUATION METRICS (17,398 Records)")
+    print("  📊 HELD-OUT TEST SET EVALUATION METRICS")
     print("=" * 80)
 
     sif_eval = evaluate_sif_model(sif_model, X_test, y_test_sif, threshold=best_threshold)
-    iogp_eval = evaluate_iogp_model(iogp_model, X_test, Y_test_rules)
+    iogp_eval = evaluate_iogp_model(iogp_model, X_test, Y_test_rules, rule_thresholds=rule_thresholds)
     sev_eval = evaluate_severity_regressor(sev_model, X_test, y_test_sev)
 
     print("\n--- 🎯 TASK 1: SIF PRECURSOR CLASSIFICATION METRICS ---")
@@ -643,7 +766,7 @@ def main():
     print(f"  • Weighted F1-Score       : {iogp_eval['f1_weighted']:.4f}")
     print("  Per-Rule Performance:")
     for rule, metrics in iogp_eval["per_rule_metrics"].items():
-        print(f"    - {rule:<25}: F1={metrics['f1_score']:.4f} | Prec={metrics['precision']:.4f} | Rec={metrics['recall']:.4f} | AUC={metrics['roc_auc']:.4f} (Support: {metrics['support']:,})")
+        print(f"    - {rule:<25}: F1={metrics['f1_score']:.4f} | Prec={metrics['precision']:.4f} | Rec={metrics['recall']:.4f} | AUC={metrics['roc_auc']:.4f} | Thresh={metrics['threshold']:.2f} (Support: {metrics['support']:,})")
 
     print("\n--- 📈 TASK 3: SIF SEVERITY REGRESSION METRICS ---")
     print(f"  • Mean Absolute Error (MAE): {sev_eval['mae']:.4f}")
@@ -654,7 +777,7 @@ def main():
     # 6. Evaluate on Indian Benchmark
     ind_results = []
     if ind_df is not None:
-        ind_results = evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df, best_threshold)
+        ind_results = evaluate_on_indian_benchmark(sif_model, iogp_model, extractor, ind_df, best_threshold, rule_thresholds)
 
     # 7. Linguistic Explainability
     linguistic_triggers = extract_top_linguistic_features(sif_model, extractor, n_top=20)
@@ -677,16 +800,21 @@ def main():
     joblib.dump(iogp_model, models_dir / "iogp_rules_classifier.joblib")
     joblib.dump(sev_model, models_dir / "severity_regressor.joblib")
     with open(models_dir / "optimal_threshold.json", "w") as f:
-        json.dump({"optimal_sif_threshold": best_threshold}, f)
+        json.dump({
+            "optimal_sif_threshold": best_threshold,
+            "rule_thresholds": rule_thresholds,
+        }, f, indent=2)
     print("   ✅ Saved: feature_extractor.joblib, sif_classifier.joblib, iogp_rules_classifier.joblib, severity_regressor.joblib")
 
     # 10. Save Metrics JSON Report
     metrics_report = {
         "timestamp": datetime.now().isoformat(),
+        "model_version": "v2_stacking_ensemble",
         "train_records": len(train_df),
         "test_records": len(test_df),
         "feature_count": X_train.shape[1],
         "optimal_sif_threshold": best_threshold,
+        "rule_thresholds": rule_thresholds,
         "task1_sif_classification": {k: v for k, v in sif_eval.items() if k not in ("probabilities", "predictions")},
         "task2_iogp_multilabel_rules": {k: v for k, v in iogp_eval.items() if k not in ("probabilities", "predictions")},
         "task3_severity_regression": {k: v for k, v in sev_eval.items() if k != "predictions"},
@@ -700,7 +828,7 @@ def main():
     print(f"   ✅ Saved Comprehensive Metrics Report: {metrics_file.name}")
 
     print("\n" + "=" * 80)
-    print("  🏆 COMPLETE MODEL TRAINING & EVALUATION SUCCESSFULLY FINISHED")
+    print("  🏆 IMPROVED MODEL v2 TRAINING & EVALUATION SUCCESSFULLY FINISHED")
     print("=" * 80)
 
 

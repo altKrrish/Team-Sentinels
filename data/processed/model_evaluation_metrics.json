@@ -1,104 +1,125 @@
 {
-  "timestamp": "2026-08-26T20:08:57.628668",
+  "timestamp": "2026-08-31T08:56:52.432964",
+  "model_version": "v2_stacking_ensemble",
   "train_records": 81184,
   "test_records": 17398,
-  "feature_count": 37013,
-  "optimal_sif_threshold": 0.48000000000000015,
+  "feature_count": 45013,
+  "optimal_sif_threshold": 0.4700000000000002,
+  "rule_thresholds": {
+    "rule_bypassing_safety_controls": 0.5799999999999998,
+    "rule_confined_space": 0.33999999999999997,
+    "rule_driving": 0.47999999999999987,
+    "rule_energy_isolation": 0.6799999999999997,
+    "rule_hot_work": 0.6599999999999998,
+    "rule_line_of_fire": 0.3999999999999999,
+    "rule_safe_mechanical_lifting": 0.6799999999999997,
+    "rule_work_authorization": 0.6799999999999997,
+    "rule_working_at_height": 0.6399999999999998
+  },
   "task1_sif_classification": {
-    "accuracy": 0.9825,
-    "precision_sif": 0.9607,
-    "recall_sif": 0.9834,
-    "f1_sif": 0.9719,
-    "f1_macro": 0.9796,
-    "f1_weighted": 0.9825,
-    "roc_auc": 0.9952,
-    "pr_auc": 0.9863,
-    "false_negative_rate": 0.0166,
+    "accuracy": 0.9834,
+    "precision_sif": 0.9617,
+    "recall_sif": 0.9855,
+    "f1_sif": 0.9734,
+    "f1_macro": 0.9807,
+    "f1_weighted": 0.9834,
+    "roc_auc": 0.9951,
+    "pr_auc": 0.9864,
+    "false_negative_rate": 0.0145,
     "confusion_matrix": {
-      "true_positive_sif": 5280,
-      "false_positive": 216,
-      "true_negative_non_sif": 11813,
-      "false_negative_missed_sif": 89
+      "true_positive_sif": 5291,
+      "false_positive": 211,
+      "true_negative_non_sif": 11818,
+      "false_negative_missed_sif": 78
     }
   },
   "task2_iogp_multilabel_rules": {
-    "subset_exact_match_accuracy": 0.8087,
-    "hamming_loss": 0.0242,
-    "jaccard_micro": 0.8602,
-    "f1_micro": 0.9249,
-    "f1_macro": 0.8796,
-    "f1_weighted": 0.9275,
+    "subset_exact_match_accuracy": 0.8273,
+    "hamming_loss": 0.0215,
+    "jaccard_micro": 0.8741,
+    "f1_micro": 0.9328,
+    "f1_macro": 0.9213,
+    "f1_weighted": 0.9331,
     "per_rule_metrics": {
       "Bypassing Safety Controls": {
-        "precision": 0.9424,
-        "recall": 0.9493,
-        "f1_score": 0.9458,
-        "roc_auc": 0.9989,
+        "precision": 0.952,
+        "recall": 0.9348,
+        "f1_score": 0.9433,
+        "roc_auc": 0.9987,
+        "threshold": 0.58,
         "support": 276
       },
       "Confined Space": {
-        "precision": 0.9989,
-        "recall": 0.9858,
-        "f1_score": 0.9923,
+        "precision": 0.9977,
+        "recall": 0.9887,
+        "f1_score": 0.9932,
         "roc_auc": 0.9992,
+        "threshold": 0.34,
         "support": 4425
       },
       "Driving": {
-        "precision": 0.911,
-        "recall": 0.8911,
-        "f1_score": 0.9009,
-        "roc_auc": 0.9764,
+        "precision": 0.9011,
+        "recall": 0.8949,
+        "f1_score": 0.898,
+        "roc_auc": 0.9761,
+        "threshold": 0.48,
         "support": 6711
       },
       "Energy Isolation": {
-        "precision": 0.5428,
-        "recall": 0.9086,
-        "f1_score": 0.6796,
-        "roc_auc": 0.992,
+        "precision": 0.808,
+        "recall": 0.8938,
+        "f1_score": 0.8488,
+        "roc_auc": 0.9916,
+        "threshold": 0.68,
         "support": 405
       },
       "Hot Work": {
-        "precision": 0.9554,
-        "recall": 0.9584,
-        "f1_score": 0.9569,
-        "roc_auc": 0.9972,
+        "precision": 0.9802,
+        "recall": 0.948,
+        "f1_score": 0.9638,
+        "roc_auc": 0.9971,
+        "threshold": 0.66,
         "support": 1251
       },
       "Line of Fire": {
-        "precision": 0.9096,
-        "recall": 0.9486,
-        "f1_score": 0.9287,
-        "roc_auc": 0.9785,
+        "precision": 0.8953,
+        "recall": 0.9637,
+        "f1_score": 0.9283,
+        "roc_auc": 0.9786,
+        "threshold": 0.4,
         "support": 8022
       },
       "Safe Mechanical Lifting": {
-        "precision": 0.9077,
-        "recall": 0.9562,
-        "f1_score": 0.9313,
-        "roc_auc": 0.9965,
+        "precision": 0.9699,
+        "recall": 0.9416,
+        "f1_score": 0.9556,
+        "roc_auc": 0.9966,
+        "threshold": 0.68,
         "support": 1028
       },
       "Work Authorization": {
-        "precision": 0.499,
-        "recall": 0.9187,
-        "f1_score": 0.6468,
-        "roc_auc": 0.9961,
+        "precision": 0.7537,
+        "recall": 0.9081,
+        "f1_score": 0.8237,
+        "roc_auc": 0.9962,
+        "threshold": 0.68,
         "support": 283
       },
       "Working at Height": {
-        "precision": 0.9378,
-        "recall": 0.9303,
-        "f1_score": 0.934,
-        "roc_auc": 0.9934,
+        "precision": 0.9646,
+        "recall": 0.9109,
+        "f1_score": 0.937,
+        "roc_auc": 0.9932,
+        "threshold": 0.64,
         "support": 2481
       }
     }
   },
   "task3_severity_regression": {
-    "mae": 0.044,
-    "rmse": 0.063,
-    "r2_score": 0.9334,
-    "spearman_rank_correlation": 0.9436
+    "mae": 0.0434,
+    "rmse": 0.0624,
+    "r2_score": 0.9348,
+    "spearman_rank_correlation": 0.9448
   },
   "task4_indian_benchmark_results": [
     {
@@ -108,7 +129,7 @@
       "activity": "Drilling Operations",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.9919,
+      "sif_probability": 0.9947,
       "sif_match": true,
       "ground_truth_rules": [
         "Line of Fire",
@@ -131,7 +152,7 @@
       "activity": "Casing Running",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.7533,
+      "sif_probability": 0.6141,
       "sif_match": true,
       "ground_truth_rules": [
         "Line of Fire",
@@ -139,7 +160,6 @@
         "Bypassing Safety Controls"
       ],
       "predicted_rules": [
-        "Bypassing Safety Controls",
         "Driving",
         "Line of Fire"
       ]
@@ -151,7 +171,7 @@
       "activity": "Workover Operations",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.9999,
+      "sif_probability": 1.0,
       "sif_match": true,
       "ground_truth_rules": [
         "Energy Isolation",
@@ -193,7 +213,7 @@
       "activity": "Hot Tapping",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.9141,
+      "sif_probability": 0.9131,
       "sif_match": true,
       "ground_truth_rules": [
         "Hot Work",
@@ -235,7 +255,7 @@
       "activity": "Tank Cleaning",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.9913,
+      "sif_probability": 0.9952,
       "sif_match": true,
       "ground_truth_rules": [
         "Confined Space",
@@ -256,7 +276,7 @@
       "activity": "Turnaround / Shutdown",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.8885,
+      "sif_probability": 0.8881,
       "sif_match": true,
       "ground_truth_rules": [
         "Working at Height",
@@ -285,6 +305,7 @@
       ],
       "predicted_rules": [
         "Bypassing Safety Controls",
+        "Confined Space",
         "Energy Isolation",
         "Hot Work",
         "Work Authorization"
@@ -297,13 +318,14 @@
       "activity": "Heavy Lift",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.6745,
+      "sif_probability": 0.769,
       "sif_match": true,
       "ground_truth_rules": [
         "Safe Mechanical Lifting",
         "Line of Fire"
       ],
       "predicted_rules": [
+        "Driving",
         "Line of Fire",
         "Safe Mechanical Lifting"
       ]
@@ -338,7 +360,7 @@
       "activity": "Mud Circulation",
       "ground_truth_sif": "Non-SIF",
       "predicted_sif": "Non-SIF",
-      "sif_probability": 0.0307,
+      "sif_probability": 0.0166,
       "sif_match": true,
       "ground_truth_rules": [],
       "predicted_rules": [
@@ -352,7 +374,7 @@
       "activity": "Mechanical Maintenance",
       "ground_truth_sif": "Non-SIF",
       "predicted_sif": "Non-SIF",
-      "sif_probability": 0.0079,
+      "sif_probability": 0.0052,
       "sif_match": true,
       "ground_truth_rules": [],
       "predicted_rules": []
@@ -364,7 +386,7 @@
       "activity": "Logistics & Transport",
       "ground_truth_sif": "SIF-Potential",
       "predicted_sif": "SIF-Potential",
-      "sif_probability": 0.5594,
+      "sif_probability": 0.6046,
       "sif_match": true,
       "ground_truth_rules": [
         "Driving"
@@ -378,165 +400,165 @@
     "top_sif_precursor_triggers": [
       [
         "amputated",
-        12.7579
+        12.0229
       ],
       [
         "amputating",
-        9.406
+        9.0169
       ],
       [
         "severing",
-        5.5552
+        5.7247
       ],
       [
         "collapse",
-        4.5188
-      ],
-      [
-        "cut off",
-        4.093
+        4.5005
       ],
       [
         "finger",
-        3.8557
+        4.3191
       ],
       [
-        "loss",
-        3.5483
+        "cut off",
+        4.1619
       ],
       [
         "tip",
-        3.548
+        4.0094
       ],
       [
-        "loss eye",
-        3.5015
-      ],
-      [
-        "finger got",
-        3.4901
+        "loss",
+        3.8513
       ],
       [
         "fingertip",
-        3.4527
+        3.3888
+      ],
+      [
+        "finger got",
+        3.0021
       ],
       [
         "off tip",
-        2.9068
-      ],
-      [
-        "arc flash",
-        2.7018
-      ],
-      [
-        "employee crushed",
-        2.6193
+        2.8388
       ],
       [
         "amputate",
-        2.6131
+        2.7405
       ],
       [
-        "crushed fractured",
-        2.4861
-      ],
-      [
-        "foot amputated",
-        2.4002
-      ],
-      [
-        "leg amputated",
-        2.3392
-      ],
-      [
-        "right middle",
-        2.2948
+        "arc flash",
+        2.5748
       ],
       [
         "flesh",
-        2.2881
+        2.3896
+      ],
+      [
+        "crushed fractured",
+        2.376
+      ],
+      [
+        "foot amputated",
+        2.3388
+      ],
+      [
+        "employee crushed",
+        2.2598
+      ],
+      [
+        "employee injured",
+        2.1877
+      ],
+      [
+        "leg amputated",
+        2.1707
+      ],
+      [
+        "saw cut",
+        2.1561
       ]
     ],
     "top_non_sif_indicators": [
       [
         "collapsed",
-        -6.5592
+        -7.1091
       ],
       [
         "finger crushed",
-        -3.132
+        -2.8714
       ],
       [
         "lacerated",
-        -2.765
-      ],
-      [
-        "amputation",
-        -2.4654
+        -2.3228
       ],
       [
         "fracturing",
-        -2.4337
-      ],
-      [
-        "thumb index",
-        -2.3622
+        -2.1939
       ],
       [
         "heat",
-        -1.9981
-      ],
-      [
-        "hospitalization",
-        -1.8554
-      ],
-      [
-        "pain",
-        -1.8537
-      ],
-      [
-        "feet",
-        -1.8522
-      ],
-      [
-        "partial amputation",
-        -1.8145
-      ],
-      [
-        "crushed between",
-        -1.8033
-      ],
-      [
-        "crushed left",
-        -1.7877
-      ],
-      [
-        "electrocuted",
-        -1.7526
+        -2.1888
       ],
       [
         "crushed",
-        -1.7384
+        -2.0468
       ],
       [
-        "lost balance",
-        -1.732
+        "electrocuted",
+        -2.0137
+      ],
+      [
+        "amputation",
+        -1.9471
+      ],
+      [
+        "feet",
+        -1.9449
+      ],
+      [
+        "crushed left",
+        -1.9178
+      ],
+      [
+        "hospitalization",
+        -1.8599
+      ],
+      [
+        "pain",
+        -1.8467
+      ],
+      [
+        "thumb index",
+        -1.8378
+      ],
+      [
+        "crushed between",
+        -1.7728
       ],
       [
         "media",
-        -1.6328
+        -1.7691
       ],
       [
-        "breaking",
-        -1.6285
+        "thumb index finger",
+        -1.7248
       ],
       [
         "injected",
-        -1.5726
+        -1.6546
       ],
       [
-        "finger hospitalized",
-        -1.56
+        "lost balance",
+        -1.5719
+      ],
+      [
+        "partial amputation",
+        -1.51
+      ],
+      [
+        "collapsed causing",
+        -1.5004
       ]
     ]
   }
