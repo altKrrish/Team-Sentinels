@@ -25,7 +25,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
-from sentinel import decision_policy, energy_metadata, form_guidance, interlock
+from sentinel import decision_policy, energy_metadata, form_guidance, interlock, pattern_extractor
+from sentinel.explainability import explain as explain_prediction
 
 logger = logging.getLogger("sentinel.service")
 
@@ -167,6 +168,8 @@ class ClassifyResponse(BaseModel):
     guidance: Dict
     severity_score: Optional[float] = None
     tagged_iogp_rules: Optional[list] = None
+    precursor_patterns: Optional[Dict] = None
+    top_contributing_phrases: Optional[Dict] = None
     latency_ms: float
 
 
@@ -227,6 +230,26 @@ def classify(req: ClassifyRequest):
             extra = _MODEL.predict_extra(req.text)
             sev_score = extra.get("severity_score")
             tagged_rules = extra.get("tagged_rules")
+
+        # Precursor pattern extraction (PS 26165 requirement c)
+        pattern_result = pattern_extractor.extract_slots(req.text)
+        patterns_dict = pattern_result.to_dict()
+
+        # Explainability: top contributing n-grams
+        xai_result = None
+        try:
+            if hasattr(_MODEL, 'sif_model') and hasattr(_MODEL, 'extractor'):
+                import pandas as pd
+                from data.preprocess_pipeline import clean_text, tokenize_for_nlp
+                cleaned = clean_text(req.text)
+                tokenized = tokenize_for_nlp(cleaned, remove_stopwords=True)
+                df_sample = pd.DataFrame([{"text_cleaned": cleaned, "text_tokenized_no_stopwords": tokenized}])
+                X = _MODEL.extractor.transform(df_sample)
+                xai = explain_prediction(_MODEL, X)
+                xai_result = xai.to_dict()
+        except Exception:
+            logger.debug("XAI extraction unavailable for report_id=%s", req.report_id)
+
     except Exception:
         logger.exception("classification failed for report_id=%s", req.report_id)
         raise HTTPException(status_code=500, detail="internal classification error")
@@ -247,6 +270,8 @@ def classify(req: ClassifyRequest):
         guidance=guidance.to_dict(),
         severity_score=sev_score,
         tagged_iogp_rules=tagged_rules,
+        precursor_patterns=patterns_dict,
+        top_contributing_phrases=xai_result,
         latency_ms=latency_ms,
     )
 

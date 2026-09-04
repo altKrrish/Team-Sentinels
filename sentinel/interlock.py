@@ -40,8 +40,19 @@ from .text_norm import damerau_levenshtein, normalize, phonetic_phrase_key
 # match, cancel it. Deliberately narrow -- broad negation scoping is a known
 # source of false negatives in safety NLP (it swallows real hazards phrased
 # as "worker did not have fall protection when they fell").
+#
+# IMPORTANT: Negation markers are split into two semantic categories:
+#   1. EVENT negation: indicates the hazard event did NOT happen
+#      ("no incident", "avoided", "drill") -> suppresses interlock
+#   2. BARRIER negation: indicates a safety barrier was ABSENT
+#      ("without harness", "no permit", "no loto") -> does NOT suppress,
+#      because the absence of a barrier IS the hazard.
+#
+# This prevents dual-clause sentences like "Worker observed without harness
+# on derrick floor, but no incident occurred" from accidentally suppressing
+# the interlock match via "no" in the backward window.
 _NEGATION_MARKERS = {
-    "no", "not", "without any", "avoided", "prevented", "near miss", "nearly",
+    "no", "not", "avoided", "prevented", "near miss", "nearly",
     "almost", "could have", "toolbox talk", "poster", "as per procedure",
     "successfully", "narrowly avoided", "was averted", "did not occur",
 }
@@ -49,6 +60,23 @@ _NEGATION_MARKERS = {
 # preposition in hazard reports ("leak near pump", "worker near panel"), and
 # including it as a negation cue silently cancelled real matches -- caught
 # by tests/test_interlock.py::test_two_corroborate_hits_different_energy_classes_fire.
+
+# Barrier-absence patterns: when these phrases appear in the negation window,
+# they indicate a MISSING safety barrier (the hazard IS present), so they
+# must NOT trigger negation suppression of the interlock. The negation word
+# ("no", "without") is part of the barrier failure description, not a denial
+# of the hazard event.
+_BARRIER_NEGATION_PHRASES = {
+    "without harness", "no harness", "without helmet", "no helmet",
+    "without permit", "no permit", "without loto", "no loto",
+    "without isolation", "no isolation", "without guard", "no guard",
+    "without gloves", "no gloves", "without ppe", "no ppe",
+    "without fall", "no fall arrest", "no fall protection",
+    "without lockout", "no lockout", "without tagout",
+    "without safety", "no safety", "without any",
+    "without gas test", "no gas test",
+    "without supervision", "no supervision",
+}
 
 # Forward-looking markers: words like "drill"/"training" typically follow the
 # hazard phrase they neutralise ("fall from height drill", "arc flash
@@ -66,6 +94,7 @@ _OUTCOME_OVERRIDE = {"fatality", "hospitalisation_major", "amputation", "amputat
 NEGATION_WINDOW = 4
 FUZZY_MAX_EDIT = 2
 FUZZY_MIN_TOKEN_LEN = 5
+
 
 
 @dataclass
@@ -111,15 +140,27 @@ def _phrase_len(surface: str) -> int:
 
 
 def _window_has_negation(tokens: Sequence[str], start: int, end: int) -> bool:
+    """Check whether the negation window around a match contains event-negation
+    markers. Barrier-negation phrases ('without harness', 'no permit') are
+    explicitly excluded because the absence of a barrier IS the hazard."""
     lo = max(0, start - NEGATION_WINDOW)
     back_window = " ".join(tokens[lo:start])
+    # Check if any negation marker appears in the backward window
     if any(neg in back_window for neg in _NEGATION_MARKERS):
+        # But check if the negation is actually part of a barrier-absence phrase.
+        # If so, the "no"/"without" is describing a MISSING barrier, not denying
+        # the hazard event. Extend the check window slightly to capture the full
+        # barrier phrase context.
+        extended_back = " ".join(tokens[lo:min(len(tokens), end + 2)])
+        if any(bp in extended_back for bp in _BARRIER_NEGATION_PHRASES):
+            return False  # Barrier negation: do NOT suppress the interlock
         return True
     hi = min(len(tokens), end + FORWARD_NEGATION_WINDOW)
     fwd_window = " ".join(tokens[end:hi])
     if any(neg in fwd_window for neg in _FORWARD_NEGATION_MARKERS):
         return True
     return False
+
 
 
 def _find_exact(norm_text: str, tokens: List[str], surface: str) -> Optional[tuple]:

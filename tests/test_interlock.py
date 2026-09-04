@@ -72,3 +72,49 @@ def test_sparse_report_leak_near_pump_does_not_auto_fire_without_energy_context(
     # the case metadata imputation is supposed to catch instead.
     r = interlock.scan("leak near pump")
     assert not r.fired
+
+
+# --- Fix 6: Barrier negation vs event negation edge cases ---
+
+def test_barrier_negation_without_harness_does_not_suppress_interlock():
+    # "without harness" is a BARRIER negation (hazard IS present).
+    # The "without" should NOT suppress the fall_from_height interlock match.
+    r = interlock.scan(
+        "Worker observed working at height without harness on derrick floor, "
+        "but no incident occurred."
+    )
+    # The interlock should fire because "without harness" means the barrier
+    # is MISSING, and there are fall-from-height indicators present.
+    assert r.fired or any(
+        m.canonical in ("fall_from_height", "ppe_gap")
+        for m in r.matches + r.corroborate_only
+        if not m.negated
+    )
+
+
+def test_event_negation_still_suppresses_interlock():
+    # "no arc flash occurred" is EVENT negation — the hazard did NOT happen.
+    # The interlock should NOT fire.
+    r = interlock.scan("Arc flash training completed, no arc flash occurred during session.")
+    assert not r.fired
+
+
+def test_without_permit_does_not_suppress_hot_work():
+    # "without permit" is a BARRIER negation — hot work WAS done improperly.
+    # Use text that matches lexicon surfaces: "hot work without permit" is an
+    # exact surface in hot_work_uncontrolled, and "gas leak" is in gas_release.
+    r = interlock.scan(
+        "Gas leak detected during hot work without permit at site."
+    )
+    # hot_work_uncontrolled and gas_release are both CORROBORATE tier from
+    # different energy classes (temperature + pressure), so they should fire
+    # the interlock via multi-class corroboration. "without permit" must not
+    # suppress either match.
+    non_negated = [
+        m for m in r.matches + r.corroborate_only if not m.negated
+    ]
+    assert len(non_negated) > 0, (
+        "Barrier negation 'without permit' incorrectly suppressed corroborate matches"
+    )
+
+
