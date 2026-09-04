@@ -480,4 +480,4 @@ flowchart TD
 * **Branch:** `Krrish`
 * **Lead Engineer & AI Architect:** altKrrish
 * **Competition Track:** Smart India Hackathon (SIH) — Problem Statement ID: 26165
-* **Target Partner:** Oil India Limited (OIL), Duliajan, Assam
+* **Target Partner:** Oil India Limited (OIL)
