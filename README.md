@@ -60,7 +60,6 @@ Raw Field Report (Text + Structured Fields)
 ## 📂 Repository Structure
 
 ```
-sentinel_hardening/
 ├── sentinel/                         # Core Hardened Safety Engine
 │   ├── lexicon.py                    # Canonical multi-tier hazard vocabulary (English, Hindi, Assamese)
 │   ├── text_norm.py                  # Indic script transliterator & domain acronym expander
