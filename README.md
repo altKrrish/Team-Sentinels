@@ -1,6 +1,6 @@
-# 🛡️ Sentinel Hardening Engine for Oilfield Safety Intelligence
+# 🛡️ Team-Sentinels: AI/NLP SIF Precursor Detection & IOGP Life-Saving Rules Engine
 ### **Zero-Tolerance SIF Precursor Detection & Automated IOGP Life-Saving Rules Tagging**
-#### *Integrated & Verified for Oil India Limited (OIL) — SIH Problem Statement 26165*
+#### *Repository: [`altKrrish/Team-Sentinels`](https://github.com/altKrrish/Team-Sentinels) (Branch: `Krrish`) | Oil India Limited (OIL) — SIH Problem Statement 26165*
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-orange.svg)](https://scikit-learn.org/)
