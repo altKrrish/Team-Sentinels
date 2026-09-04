@@ -593,4 +593,4 @@ The marginal recall improvement ($+0.24\text{--}0.36\%$) does not justify the $4
 * **Branch:** `Krrish`
 * **Lead Engineer & AI Architect:** altKrrish
 * **Competition Track:** Smart India Hackathon (SIH) — Problem Statement ID: 26165
-* **Target Partner:** Oil India Limited (OIL)
+* **Target Partner:** Oil India Limited (OIL), Duliajan, Assam
