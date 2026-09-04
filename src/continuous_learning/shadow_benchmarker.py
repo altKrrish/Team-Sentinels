@@ -58,23 +58,43 @@ class ShadowBenchmarker:
         eval_subset = eval_df.head(max_samples).copy()
         n_samples = len(eval_subset)
 
-        # 1. Benchmark Champion
+        from sentinel import interlock as sentinel_il, decision_policy as sentinel_dp
+
+        # 1. Benchmark Champion with Hardened Precedence
         t0 = time.perf_counter()
         X_champ = champion_pipeline["extractor"].transform(eval_subset)
         champ_raw_probs = champion_pipeline["sif_model"].predict_proba(X_champ)
         champ_sif_probs = champ_raw_probs[:, 1] if champ_raw_probs.shape[1] > 1 else np.zeros(champ_raw_probs.shape[0])
         champ_thresh = champion_pipeline.get("thresholds", {}).get("optimal_sif_threshold", 0.47)
-        champ_preds = (champ_sif_probs >= champ_thresh).astype(int)
+        
+        champ_preds_list = []
+        for i in range(n_samples):
+            txt = str(eval_subset.iloc[i].get("text_cleaned") or "")
+            p = float(champ_sif_probs[i])
+            il = sentinel_il.scan(txt)
+            dec = sentinel_dp.decide(p, interlock=il, metadata=None)
+            pred = 1 if dec.label == "SIF" else (1 if dec.route == sentinel_dp.Route.HUMAN_REVIEW else (1 if p >= champ_thresh else 0))
+            champ_preds_list.append(pred)
+        champ_preds = np.array(champ_preds_list)
         t_champ_total = (time.perf_counter() - t0) * 1000.0
         latency_champ = round(t_champ_total / max(n_samples, 1), 3)
 
-        # 2. Benchmark Challenger
+        # 2. Benchmark Challenger with Hardened Precedence
         t0 = time.perf_counter()
         X_chal = challenger_pipeline["extractor"].transform(eval_subset)
         chal_raw_probs = challenger_pipeline["sif_model"].predict_proba(X_chal)
         chal_sif_probs = chal_raw_probs[:, 1] if chal_raw_probs.shape[1] > 1 else np.zeros(chal_raw_probs.shape[0])
         chal_thresh = challenger_pipeline.get("thresholds", {}).get("optimal_sif_threshold", 0.47)
-        chal_preds = (chal_sif_probs >= chal_thresh).astype(int)
+        
+        chal_preds_list = []
+        for i in range(n_samples):
+            txt = str(eval_subset.iloc[i].get("text_cleaned") or "")
+            p = float(chal_sif_probs[i])
+            il = sentinel_il.scan(txt)
+            dec = sentinel_dp.decide(p, interlock=il, metadata=None)
+            pred = 1 if dec.label == "SIF" else (1 if dec.route == sentinel_dp.Route.HUMAN_REVIEW else (1 if p >= chal_thresh else 0))
+            chal_preds_list.append(pred)
+        chal_preds = np.array(chal_preds_list)
         t_chal_total = (time.perf_counter() - t0) * 1000.0
         latency_chal = round(t_chal_total / max(n_samples, 1), 3)
 

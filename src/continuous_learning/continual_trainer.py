@@ -253,7 +253,8 @@ class ContinualLearningOrchestrator:
         # Step 4: Promotion & Governance Sign-off
         promoted = False
         deployment_details = {}
-        if safety_result.passed and auto_promote_if_certified:
+        shadow_cleared = shadow_report.recommendation.startswith("RECOMMEND_PROMOTION")
+        if safety_result.passed and shadow_cleared and auto_promote_if_certified:
             print("\n🏆 [Step 4/4] Promoting Certified Challenger Model to Production Champion...")
             # 1. Archive previous champion
             archive_subdir = self.registry_dir / f"archive_{champion['version']}_{int(time.time())}"

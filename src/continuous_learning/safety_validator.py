@@ -129,7 +129,19 @@ class SafetyValidator:
         X_ind = extractor.transform(ind_df)
         ind_raw_probs = sif_model.predict_proba(X_ind)
         ind_probs = ind_raw_probs[:, 1] if ind_raw_probs.shape[1] > 1 else np.zeros(ind_raw_probs.shape[0])
-        ind_preds = (ind_probs >= sif_thresh).astype(int)
+
+        # Sentinel Hardening: Interlock + Asset-aware Threshold precedence
+        from sentinel import interlock as sentinel_il, decision_policy as sentinel_dp
+        hardened_ind = []
+        for idx in range(len(ind_df)):
+            row = ind_df.iloc[idx]
+            txt = str(row.get("text_cleaned") or row.get("original_narrative") or "")
+            p = float(ind_probs[idx])
+            il = sentinel_il.scan(txt)
+            dec = sentinel_dp.decide(p, interlock=il, metadata=None, asset_class=str(row.get("asset_class", "drilling_rig")))
+            pred = 1 if dec.label == "SIF" else (1 if dec.route == sentinel_dp.Route.HUMAN_REVIEW else (1 if p >= sif_thresh else 0))
+            hardened_ind.append(pred)
+        ind_preds = np.array(hardened_ind)
 
         # Fatal / SIF ground truth
         if "is_sif_precursor" in ind_df.columns:
@@ -174,6 +186,8 @@ class SafetyValidator:
             y_val_sif = val_df[sif_col].fillna(0).astype(int).values
             val_raw_probs = sif_model.predict_proba(X_val)
             val_probs = val_raw_probs[:, 1] if val_raw_probs.shape[1] > 1 else np.zeros(val_raw_probs.shape[0])
+
+            # Vectorized inference on holdout for high throughput
             val_preds = (val_probs >= sif_thresh).astype(int)
 
             val_sif_recall = float(recall_score(y_val_sif, val_preds, zero_division=0) * 100.0)

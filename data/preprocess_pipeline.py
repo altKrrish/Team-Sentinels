@@ -100,6 +100,13 @@ def clean_text(text: str) -> str:
     if not text or not text.strip():
         return ""
 
+    # 0. Sentinel Hardening: Script-aware transliteration (Devanagari/Bengali/Assamese -> Latin) & abbreviations
+    try:
+        from sentinel.text_norm import normalize as sentinel_norm
+        text = sentinel_norm(text)
+    except Exception:
+        pass
+
     # 1. Unicode normalization
     text = unicodedata.normalize("NFKD", text)
 
