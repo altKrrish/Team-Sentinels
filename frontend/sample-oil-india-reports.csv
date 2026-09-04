@@ -1,0 +1,13 @@
+date,type,site,asset,department,activity,reportedby,observation
+2026-08-18,UA,Duliajan,GCS Duliajan,Production,Hot work,R. Gogoi,"Welding on the produced water line resumed without a fresh gas test. The hot work permit had expired and the standby fire watch had left the location."
+2026-08-19,UC,Moran,OCS Moran,Production,Energy isolation,P. Baruah,"The transfer pump MCC had no visible lockout tag and the isolation status was not verified before maintenance started."
+2026-08-20,near-miss,Naharkatiya,Workover Rig WR-2,Well Services,Pressure testing,A. Saikia,"Three crew members stood in the line of fire during a 210 kg/cm2 hydrotest. No whip check was installed on the test hose."
+2026-08-21,UA,Baghjan,Rig ITD-12,Drilling,Working at height,M. Rahman,"A worker climbed the derrick ladder without connecting the fall arrest lanyard. The access platform was wet after rain."
+2026-08-22,UC,Kumchai,GGS Kumchai,Production,Housekeeping,K. Phukan,"Empty drums and scrap tubing were stacked along the main walkway, reducing the emergency escape route to about 600 mm."
+2026-08-23,near-miss,Duliajan,Central Workshop,Mechanical,Mechanical lifting,B. Tamuli,"A suspended pump casing shifted during crane lifting when the tag line was not used. No one was injured and the load was lowered safely."
+2026-08-24,UA,Moran,Field Transport Moran,Logistics,Driving,H. Das,"A tanker driver overtook another vehicle inside the plant approach road while travelling above the posted speed limit without a spotter."
+2026-08-25,UC,Naharkatiya,Substation NHK-2,Electrical & Inst.,Electrical work,J. Kalita,"The temporary electrical panel door was damaged and the cable entry was not sealed against rainwater. The panel remained energised pending repair."
+2026-08-26,near-miss,Baghjan,GGS Baghjan-2,Gas Processing,Confined space,V. Sharma,"Contract workers prepared to enter the separator without continuous gas monitoring and without an attendant posted at the manway. Entry was stopped by the area officer."
+2026-08-27,UA,Kumchai,Well KUM-3,Well Services,Line breaking,N. Hazarika,"A fitter loosened the flange bolts before confirming that the pressure had been fully bled from the flowline. The job was stopped when residual pressure was detected."
+2026-08-28,UC,Duliajan,LPG Plant Duliajan,Gas Processing,Fire protection,S. Dutta,"The emergency firewater hose reel near the LPG pump bay was obstructed by stored materials and could not be fully pulled out."
+2026-08-29,near-miss,Moran,Pipeline ROW KM-77,Pipelines,Excavation,L. Nath,"An excavator started digging within the marked pipeline corridor before the permit and underground-service scan were verified. Work was stopped during the first bucket movement."

@@ -1,0 +1,190 @@
+{
+  "provenance": {
+    "status": "PROTOTYPE",
+    "trainedOn": "closecall/corpus.py",
+    "warning": "These figures measure whether the pipeline learns the pattern it was shown on generated narratives. They are NOT evidence about performance on OIL's live reports. Drop a labelled CSV at data/reports.csv and re-run train.py; no other file changes.",
+    "labelRule": "SIF potential = high hazard energy AND a barrier that was absent, failed, bypassed, inadequate or unverified (DEKRA / EEI precursor model). Latent risk threshold 5.6, with 5% label noise standing in for reviewer disagreement.",
+    "split": "stratified 70/15/15 on the SIF label",
+    "splitCaveat": "Random split. Real narratives need a DATE split - the same job is written up repeatedly in near-identical words and a random split leaks. Include a reportedAt column and train.py switches automatically.",
+    "seed": 26165
+  },
+  "corpus": {
+    "total": 9000,
+    "train": 6300,
+    "validation": 1350,
+    "test": 1350,
+    "sifPositiveRate": 0.24633333333333332
+  },
+  "pipeline": {
+    "wordTfidfDims": 5265,
+    "charNgramDims": 8742,
+    "engineeredDims": 16,
+    "engineeredFamilies": {
+      "severity": [
+        "sev_lexicon_hits",
+        "max_sev_term_rank",
+        "injury_outcome_flag"
+      ],
+      "barrier": [
+        "barrier_absent_cue",
+        "barrier_bypass_cue",
+        "barrier_verify_gap"
+      ],
+      "violation": [
+        "permit_violation_cue",
+        "ppe_violation_cue",
+        "procedure_deviation_cue"
+      ],
+      "negation": [
+        "negation_count",
+        "negated_control_scope"
+      ],
+      "measurement": [
+        "pressure_qty",
+        "height_qty",
+        "gas_conc_qty"
+      ],
+      "temporal": [
+        "overdue_interval",
+        "shift_handover_cue"
+      ]
+    },
+    "heads": {
+      "sif": "LogisticRegression (class_weight=balanced)",
+      "rules": "OneVsRestClassifier(LogisticRegression)",
+      "severity": "Ridge",
+      "auxiliary": "LogisticRegression x4 (energy, barrier, actual band, potential band)"
+    }
+  },
+  "binary": {
+    "confusion": {
+      "tp": 262,
+      "fn": 70,
+      "fp": 179,
+      "tn": 839
+    },
+    "n": 1350,
+    "positives": 332,
+    "precision": 0.5941043083900227,
+    "recall": 0.7891566265060241,
+    "f1": 0.6778783958602846,
+    "accuracy": 0.8155555555555556,
+    "specificity": 0.8241650294695482,
+    "rocAuc": 0.8708458588775534,
+    "threshold": 0.5
+  },
+  "multilabel": {
+    "perRule": [
+      {
+        "id": "driving",
+        "precision": 0.9882352941176471,
+        "recall": 1.0,
+        "f1": 0.9940828402366864,
+        "support": 84
+      },
+      {
+        "id": "line-of-fire",
+        "precision": 0.896551724137931,
+        "recall": 0.9811320754716981,
+        "f1": 0.9369369369369369,
+        "support": 318
+      },
+      {
+        "id": "hot-work",
+        "precision": 0.8388625592417062,
+        "recall": 0.9267015706806283,
+        "f1": 0.8805970149253731,
+        "support": 191
+      },
+      {
+        "id": "working-at-height",
+        "precision": 0.7510548523206751,
+        "recall": 0.9834254143646409,
+        "f1": 0.8516746411483254,
+        "support": 181
+      },
+      {
+        "id": "confined-space",
+        "precision": 0.8013245033112583,
+        "recall": 0.9029850746268657,
+        "f1": 0.8491228070175438,
+        "support": 134
+      },
+      {
+        "id": "bypassing-safety-controls",
+        "precision": 0.7594501718213058,
+        "recall": 0.9364406779661016,
+        "f1": 0.8387096774193549,
+        "support": 236
+      },
+      {
+        "id": "work-authorisation",
+        "precision": 0.7653239929947461,
+        "recall": 0.9238900634249472,
+        "f1": 0.8371647509578544,
+        "support": 473
+      },
+      {
+        "id": "energy-isolation",
+        "precision": 0.7624633431085044,
+        "recall": 0.9187279151943463,
+        "f1": 0.8333333333333334,
+        "support": 283
+      },
+      {
+        "id": "safe-mechanical-lifting",
+        "precision": 0.658008658008658,
+        "recall": 0.9047619047619048,
+        "f1": 0.7619047619047619,
+        "support": 168
+      }
+    ],
+    "microF1": 0.8566387295985884,
+    "macroF1": 0.8648363070977968,
+    "hammingLoss": 0.053497942386831275,
+    "subsetAccuracy": 0.58,
+    "labels": 9,
+    "tagThreshold": 0.35,
+    "tagsPerReport": 1.8266666666666667,
+    "multiRuleShare": 0.5725925925925925
+  },
+  "severity": {
+    "mae": 0.5288485259891187,
+    "rmse": 0.6576295540075685,
+    "r2": 0.891804768787871,
+    "scale": 10,
+    "calibration": [
+      {
+        "band": 1,
+        "mae": 0.6047370405276157,
+        "support": 143
+      },
+      {
+        "band": 2,
+        "mae": 0.5520020840061569,
+        "support": 246
+      },
+      {
+        "band": 3,
+        "mae": 0.6110610917716237,
+        "support": 182
+      },
+      {
+        "band": 4,
+        "mae": 0.5404711779151484,
+        "support": 250
+      },
+      {
+        "band": 5,
+        "mae": 0.46378957928756875,
+        "support": 529
+      }
+    ]
+  },
+  "auxiliary": {
+    "hazardEnergy": 0.98,
+    "severityActualBand": 0.9844444444444445,
+    "severityPotentialBand": 0.9296296296296296,
+    "barrierState": 0.9962406015037594
+  }
+}
