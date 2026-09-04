@@ -27,6 +27,14 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# Ensure UTF-8 output encoding on Windows consoles
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -35,7 +43,14 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data.preprocess_pipeline import clean_text, tokenize_for_nlp
-from sentinel import decision_policy, energy_metadata, form_guidance, interlock
+from sentinel import (
+    decision_policy,
+    energy_metadata,
+    explainability,
+    form_guidance,
+    interlock,
+    pattern_extractor,
+)
 from src.models.train_sif_engine import MultiModalFeatureExtractor, engineer_features
 
 RULE_COLUMNS = [
@@ -153,6 +168,12 @@ def run_inference(
 
     tagged_rules = sorted(tagged_rules_dict.items(), key=lambda x: x[1], reverse=True)
 
+    # 8. Precursor Pattern Triad Extraction (SIH 26165 Requirement 'c')
+    pattern_triad = pattern_extractor.extract_slots(narrative)
+
+    # 9. Explainability & Feature Attribution (XAI)
+    explanation = explainability.explain(sif_model, X, top_k_positive=4, top_k_negative=2)
+
     latency_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
     return {
@@ -185,6 +206,8 @@ def run_inference(
             for s in meta_result.signals if s.triggered
         ],
         "tagged_iogp_rules": tagged_rules,
+        "pattern_triad": pattern_triad.to_dict(),
+        "explainability": explanation.to_dict(),
         "form_guidance": {
             "meets_minimum": guidance.meets_minimum,
             "needs_detail": guidance.needs_detail,
@@ -198,68 +221,97 @@ def run_inference(
 
 def print_formatted_report(res: Dict[str, Any]):
     print("\n" + "=" * 76)
-    print("  🛡️  SENTINEL HARDENED SIF PRECURSOR INFERENCE ENGINE (v2.1 OIL)")
+    print("  [+] SENTINEL HARDENED SIF PRECURSOR INFERENCE ENGINE (v2.1 OIL)")
     print("=" * 76)
     print(f"  Input Narrative : {res['narrative']}")
     if res['cleaned_text'] != res['narrative']:
         print(f"  Normalized Text : {res['cleaned_text']}")
     print(f"  Asset Class     : {res['asset_class']} (Calibrated tau: {res['tau_used']:.3f})")
-    print("─" * 76)
+    print("-" * 76)
 
     # Classification Banner
     if res['decision_label'] == "SIF":
         if res['interlock_fired']:
-            banner = "🚨 SIF-POTENTIAL PRECURSOR [HARDENED INTERLOCK OVERRIDE]"
+            banner = "[!] SIF-POTENTIAL PRECURSOR [HARDENED INTERLOCK OVERRIDE]"
         elif res['metadata_triggered']:
-            banner = "🚨 SIF-POTENTIAL PRECURSOR [STANDARDS METADATA BREACH]"
+            banner = "[!] SIF-POTENTIAL PRECURSOR [STANDARDS METADATA BREACH]"
         else:
-            banner = "🚨 SIF-POTENTIAL PRECURSOR [STATISTICAL CLASSIFIER]"
+            banner = "[!] SIF-POTENTIAL PRECURSOR [STATISTICAL CLASSIFIER]"
     else:
         if res['decision_route'] == "HUMAN_REVIEW":
-            banner = "⚠️ ROUTED TO HUMAN SAFETY REVIEW [CONFIDENCE BAND]"
+            banner = "[?] ROUTED TO HUMAN SAFETY REVIEW [CONFIDENCE BAND]"
         else:
-            banner = "✅ NON-SIF OBSERVATION [SAFE/ROUTINE]"
+            banner = "[*] NON-SIF OBSERVATION [SAFE/ROUTINE]"
 
     print(f"  Final Decision  : {banner}")
     print(f"  Precedence Route: {res['decision_route'].upper()}")
     print(f"  Audit Reason    : {res['decision_reason']}")
     print(f"  Model SIF Prob  : {res['sif_probability']*100:.2f}% (Threshold: {res['tau_used']*100:.1f}%)")
     print(f"  Severity Score  : {res['severity_score']:.4f} / 1.0000")
-    print("─" * 76)
+    print("-" * 76)
 
     # Energy Classes & Interlock
     if res['energy_classes_hit'] or res['metadata_classes']:
         all_ec = sorted(list(set(res['energy_classes_hit'] + res['metadata_classes'])))
-        print(f"  ⚡ Energy Sources : {', '.join(all_ec)}")
+        print(f"  [E] Energy Sources : {', '.join(all_ec)}")
     if res['interlock_matches']:
-        print("  🔍 Interlock Hits :")
+        print("  [I] Interlock Hits :")
         for m in res['interlock_matches']:
-            print(f"     • [{m['tier']}] {m['canonical']} ({m['energy_class']}) -> '{m['matched_span']}'")
+            print(f"     * [{m['tier']}] {m['canonical']} ({m['energy_class']}) -> '{m['matched_span']}'")
     if res['metadata_reasons']:
-        print("  📏 Sourced Breaches:")
+        print("  [M] Sourced Breaches:")
         for r in res['metadata_reasons']:
-            print(f"     • {r}")
+            print(f"     * {r}")
 
-    print("─" * 76)
-    print("  🏷️  Tagged IOGP Life-Saving Rules:")
+    print("-" * 76)
+    print("  [R] Tagged IOGP Life-Saving Rules:")
     if res['tagged_iogp_rules']:
         for rule, prob in res['tagged_iogp_rules']:
-            print(f"     • {rule:<32} (Confidence: {prob}%)")
+            print(f"     * {rule:<32} (Confidence: {prob}%)")
     else:
-        print("     • None (General observation / non-SIF)")
+        print("     * None (General observation / non-SIF)")
+
+    # Precursor Pattern Triad (Problem Statement 26165 Requirement 'c')
+    pt = res.get('pattern_triad', {})
+    if pt and (pt.get('activities') or pt.get('locations') or pt.get('barrier_failures')):
+        print("-" * 76)
+        print("  [P] Recurring Precursor Pattern Triad (SIH PS 26165):")
+        if pt.get('activities'):
+            print(f"     * Activity       : {', '.join(pt['activities'])}")
+        if pt.get('locations'):
+            print(f"     * Location       : {', '.join(pt['locations'])}")
+        if pt.get('barrier_failures'):
+            print(f"     * Barrier Failure: {', '.join(pt['barrier_failures'])}")
+        status = "FULL TRIAD IDENTIFIED" if pt.get('has_full_triad') else "PARTIAL TRIAD IDENTIFIED"
+        print(f"     * Triad Quality  : {status}")
+
+    # Explainability & Feature Attribution (XAI)
+    exp = res.get('explainability', {})
+    if exp and exp.get('available'):
+        pos = exp.get('top_positive_contributors', [])
+        neg = exp.get('top_negative_contributors', [])
+        if pos or neg:
+            print("-" * 76)
+            print("  [X] Explainability & Feature Attribution (XAI - Linear Coefficient):")
+            if pos:
+                pos_str = ", ".join(f"'{p['feature']}' (+{p['contribution']:.3f})" for p in pos[:3])
+                print(f"     * SIF-Driving Tokens  : {pos_str}")
+            if neg:
+                neg_str = ", ".join(f"'{n['feature']}' ({n['contribution']:.3f})" for n in neg[:2])
+                print(f"     * Safe-Driving Tokens : {neg_str}")
 
     # Form Guidance
     fg = res['form_guidance']
     if fg['needs_detail'] or fg['suggestions']:
-        print("─" * 76)
-        print("  📝 Form Guidance Alerts (Non-blocking):")
+        print("-" * 76)
+        print("  [G] Form Guidance Alerts (Non-blocking):")
         if not fg['meets_minimum']:
-            print(f"     • Sparse report warning: only {fg['word_count']} words (recommended: >= 8).")
+            print(f"     * Sparse report warning: only {fg['word_count']} words (recommended: >= 8).")
         for s in fg['suggestions']:
-            print(f"     • Prompt: {s}")
+            print(f"     * Prompt: {s}")
 
-    print("─" * 76)
-    print(f"  ⏱️  Inference Latency: {res['latency_ms']} ms")
+    print("-" * 76)
+    print(f"  [T] Inference Latency: {res['latency_ms']} ms")
     print("=" * 76 + "\n")
 
 
